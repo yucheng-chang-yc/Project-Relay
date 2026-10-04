@@ -32,7 +32,7 @@ Execution evidence + exact artifacts                         │
 
 That loop is the product: **reasoning, local execution, evidence, review, and continuation stay connected without requiring the user to move between separate AI interfaces for every step.**
 
-![Project Relay in use: ChatGPT conversation with the Project Relay task panel](docs/images/project-relay-chatgpt-task-review.webp)
+![Project Relay in use: ChatGPT conversation with the Project Relay task panel](docs/images/project-relay-chatgpt-task-review.png)
 
 *Project Relay in use: ChatGPT remains the working surface while local executor tasks, results, and review actions stay visible in the Project Relay panel.*
 
