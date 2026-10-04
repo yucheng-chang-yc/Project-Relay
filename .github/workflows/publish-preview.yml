@@ -6,6 +6,7 @@ on:
     paths:
       - 'release/v0.2.0-preview.2/**'
       - '.github/workflows/publish-preview.yml'
+      - 'scripts/publish_preview.py'
   workflow_dispatch:
 
 concurrency:

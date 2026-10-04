@@ -89,10 +89,18 @@ def publish():
         gh("release", "create", TAG, "--repo", REPOSITORY, "--target", commit,
            "--draft", "--prerelease", "--latest=false", "--title", "Project Relay " + TAG,
            "--notes-file", str(ASSETS / "RELEASE_NOTES.md"))
-    release = api("releases/tags/" + TAG)
+    # A draft with a new tag is discoverable by release ID before its tag exists.
+    release = next(r for r in api("releases?per_page=100") if r["tag_name"] == TAG)
+    require(release["name"] == "Project Relay " + TAG and release["prerelease"], "Existing release identity mismatch")
+    refs = [r for r in api("git/matching-refs/tags/" + TAG) if r["ref"] == "refs/tags/" + TAG]
+    if not refs:
+        require(release["draft"], "Published release has no tag")
+        gh("api", "--method", "POST", "repos/" + REPOSITORY + "/git/refs",
+           "-f", "ref=refs/tags/" + TAG, "-f", "sha=" + commit)
+        gh("api", "--method", "PATCH", "repos/" + REPOSITORY + "/releases/" + str(release["id"]),
+           "-f", "target_commitish=" + commit)
     ref = api("git/ref/tags/" + TAG)
     require(ref["object"]["type"] == "commit" and ref["object"]["sha"] == commit, "Release tag points to a different commit")
-    require(release["name"] == "Project Relay " + TAG and release["prerelease"], "Existing release identity mismatch")
     remote = {asset["name"]: asset for asset in release["assets"]}
     require(set(remote) <= set(EXPECTED), "Unexpected existing release assets")
     missing = [name for name in EXPECTED if name not in remote]
@@ -104,7 +112,7 @@ def publish():
         verify_assets(Path(directory))
     if release["draft"]:
         gh("release", "edit", TAG, "--repo", REPOSITORY, "--draft=false", "--prerelease", "--latest=false")
-    release = api("releases/tags/" + TAG)
+    release = api("releases/" + str(release["id"]))
     require(not release["draft"] and release["prerelease"], "Release publication state mismatch")
     require({a["name"] for a in release["assets"]} == set(EXPECTED), "Published asset set mismatch")
     report = {"release_url": release["html_url"], "commit": commit, "prerelease": True,
