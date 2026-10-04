@@ -79,28 +79,48 @@ def api(endpoint):
     return json.loads(gh("api", "repos/" + REPOSITORY + "/" + endpoint))
 
 
+def verify_tag_source(commit):
+    tree = api("git/commits/" + commit)["tree"]["sha"]
+    remote = api("git/trees/" + tree + "?recursive=1")
+    require(not remote["truncated"], "Tag tree is truncated")
+    blobs = {entry["path"]: entry["sha"] for entry in remote["tree"] if entry["type"] == "blob"}
+    for directory in (ROOT / "local-pack", ASSETS):
+        for path in directory.rglob("*"):
+            if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc":
+                continue
+            raw = path.read_bytes()
+            digest = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+            require(blobs.get(path.relative_to(ROOT).as_posix()) == digest, "Tagged source/asset differs: " + path.name)
+
+
 def publish():
     require(os.environ.get("GITHUB_REPOSITORY") == REPOSITORY, "Unexpected repository")
     require(os.environ.get("GITHUB_REF") == "refs/heads/main", "Publish only from main")
     commit = os.environ["GITHUB_SHA"]
-    existing = [r for r in api("releases?per_page=100") if r["tag_name"] == TAG]
+    existing = [r for r in api("releases?per_page=100")
+                if r["tag_name"] == TAG or (r["draft"] and r["name"] == "Project Relay " + TAG)]
     require(len(existing) <= 1, "Ambiguous existing release")
     if not existing:
         gh("release", "create", TAG, "--repo", REPOSITORY, "--target", commit,
            "--draft", "--prerelease", "--latest=false", "--title", "Project Relay " + TAG,
            "--notes-file", str(ASSETS / "RELEASE_NOTES.md"))
     # A draft with a new tag is discoverable by release ID before its tag exists.
-    release = next(r for r in api("releases?per_page=100") if r["tag_name"] == TAG)
+    release = next(r for r in api("releases?per_page=100")
+                   if r["tag_name"] == TAG or (r["draft"] and r["name"] == "Project Relay " + TAG))
     require(release["name"] == "Project Relay " + TAG and release["prerelease"], "Existing release identity mismatch")
     refs = [r for r in api("git/matching-refs/tags/" + TAG) if r["ref"] == "refs/tags/" + TAG]
     if not refs:
         require(release["draft"], "Published release has no tag")
         gh("api", "--method", "POST", "repos/" + REPOSITORY + "/git/refs",
            "-f", "ref=refs/tags/" + TAG, "-f", "sha=" + commit)
-        gh("api", "--method", "PATCH", "repos/" + REPOSITORY + "/releases/" + str(release["id"]),
-           "-f", "target_commitish=" + commit)
     ref = api("git/ref/tags/" + TAG)
-    require(ref["object"]["type"] == "commit" and ref["object"]["sha"] == commit, "Release tag points to a different commit")
+    require(ref["object"]["type"] == "commit", "Expected a lightweight commit tag")
+    source_commit = ref["object"]["sha"]
+    verify_tag_source(source_commit)
+    if release["draft"]:
+        gh("api", "--method", "PATCH", "repos/" + REPOSITORY + "/releases/" + str(release["id"]),
+           "-f", "tag_name=" + TAG, "-f", "target_commitish=" + source_commit)
+        release = api("releases/" + str(release["id"]))
     remote = {asset["name"]: asset for asset in release["assets"]}
     require(set(remote) <= set(EXPECTED), "Unexpected existing release assets")
     missing = [name for name in EXPECTED if name not in remote]
@@ -115,7 +135,7 @@ def publish():
     release = api("releases/" + str(release["id"]))
     require(not release["draft"] and release["prerelease"], "Release publication state mismatch")
     require({a["name"] for a in release["assets"]} == set(EXPECTED), "Published asset set mismatch")
-    report = {"release_url": release["html_url"], "commit": commit, "prerelease": True,
+    report = {"release_url": release["html_url"], "source_commit": source_commit, "publisher_commit": commit, "prerelease": True,
               "download_verified_assets": EXPECTED}
     print(json.dumps(report, indent=2))
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
