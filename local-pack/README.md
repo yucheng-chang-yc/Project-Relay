@@ -4,7 +4,7 @@
 
 Project Relay lets you stay in ChatGPT while working with an authorized local project. From the Project Relay plugin, ChatGPT can inspect local files and Git state, delegate heavier work to Codex or Claude, run approved project commands, bring generated artifacts back for review, and continue from those exact results.
 
-> **Status:** Preview / MVP. Windows installation, tunnel connection and the ChatGPT → Claude → R → exact ZIP workflow passed on `v0.2.0-preview.1`; its shutdown fix also passed on Windows. `v0.2.0-preview.2` packages those changes, MIT licensing and updated release documentation. The exact `.2` ZIP passed Windows fresh-install checks; the private Plugin was updated and project tools passed a live smoke on the retained baseline installation. See [release verification](docs/VERIFICATION.md) for tested scope.
+> **Status:** Preview / MVP. Windows installation, tunnel connection and the ChatGPT → Claude → R → exact ZIP workflow passed on `v0.2.0-preview.1`; its shutdown fix also passed on Windows. `v0.2.0-preview.2` packages those changes, MIT licensing and updated release documentation. The exact `.2` ZIP still needs a Windows fresh-install check. See [release verification](docs/VERIFICATION.md) for tested scope.
 
 ## How It Fits with Existing Tools
 
@@ -245,7 +245,7 @@ ChatGPT
 → follow-up from prior results
 ```
 
-Windows installation, private Plugin binding, ChatGPT project inspection, a short task, and the Claude/R artifact loop passed on `v0.2.0-preview.1`. The shutdown patch passed real Ctrl+C/Ctrl+Break stop/restart checks. For `v0.2.0-preview.2`, exact-ZIP Windows installation and private Plugin import passed. Live project smoke used the retained `.1 + D-004` service; the isolated `.2` installation was checked over stdio and has not taken over the live tunnel. Tasks-card visual behavior, originating-conversation Events continuation and snapshots above 97,520 bytes are not yet verified. See [verification scope](docs/VERIFICATION.md).
+Windows installation, private Plugin binding, ChatGPT project inspection, a short task, and the Claude/R artifact loop passed on `v0.2.0-preview.1`. The shutdown patch passed real Ctrl+C/Ctrl+Break stop/restart checks. For `v0.2.0-preview.2`, exact-ZIP Windows installation and host import remain to be checked; Tasks-card visual behavior, originating-conversation Events continuation and snapshots above 97,520 bytes are not yet verified. See [verification scope](docs/VERIFICATION.md).
 
 Still being refined:
 
@@ -288,7 +288,7 @@ Local package / Plugin: 0.2.0-preview.2
 Bundled runtime core:    0.2.0-spike.4
 ```
 
-Preview validation targets matching Local Runtime package and Plugin versions. Other compatibility combinations are not currently established. The `.2` private Plugin was checked with the retained baseline service; a full live-tunnel takeover by the isolated `.2` installation was not performed.
+Preview validation targets matching Local Runtime package and Plugin versions. Other compatibility combinations are not currently established; the exact `.2` host pairing is still pending.
 
 ## Development and Release Status
 

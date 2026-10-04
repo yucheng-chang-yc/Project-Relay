@@ -1,0 +1,34 @@
+name: Publish verified Project Relay preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release/v0.2.0-preview.2/**'
+      - '.github/workflows/publish-preview.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: project-relay-preview-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.repository == 'yucheng-chang-yc/Project-Relay' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Verify source, package manifests and seven frozen assets
+        run: python3 scripts/publish_preview.py
+      - name: Create pre-release and independently verify downloaded assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_preview.py --publish

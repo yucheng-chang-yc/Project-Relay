@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "project-workbench",
+  "version": "0.2.0-preview.2",
+  "description": "Connect ChatGPT to local projects, run durable AI tasks, and retrieve verified results.",
+  "author": {
+    "name": "Lex"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Project Relay",
+        "shortDescription": "Local tasks, verified results",
+        "longDescription": "Keep projects on your computer while ChatGPT coordinates Codex, Claude Code and local commands. Track durable tasks, review changes, retrieve outputs and share individual files through one-time snapshot approval.",
+        "developerName": "Lex",
+        "category": "Productivity",
+        "capabilities": [
+          "Interactive"
+        ],
+        "defaultPrompt": "Open Project Relay and show my local project tasks."
+      }
+    }
+  }
+}

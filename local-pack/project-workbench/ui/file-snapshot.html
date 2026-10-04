@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project Relay · File access</title>
+<style>
+:root{color-scheme:light dark;--bg:#fafafa;--panel:#fff;--card:#fff;--fg:#202020;--text:#202020;--muted:#666;--line:#e4e4e4;--accent:#202020;--accent-text:#fff;--soft:#f0f0f0;--warn:#805a16;--bad:#b42318;--error:#b42318}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--panel:#202020;--card:#202020;--fg:#ededed;--text:#ededed;--muted:#aaa;--line:#393939;--accent:#ededed;--accent-text:#171717;--soft:#2c2c2c;--warn:#e4bd77;--bad:#ff9c95;--error:#ff9c95}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.55 system-ui,-apple-system,'Segoe UI',sans-serif}main{max-width:960px;margin:auto;padding:24px}.compact{max-width:680px}header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;letter-spacing:-.2px;margin-bottom:16px}.mark{display:inline-grid;place-items:center;width:29px;height:29px;border-radius:8px;background:var(--accent);color:var(--accent-text);font-size:11px;letter-spacing:-.5px}h1{font-size:24px;font-weight:650;letter-spacing:-.65px;line-height:1.25;margin:0 0 9px}h2{font-size:16px;margin:0 0 8px}p{margin:8px 0}.muted,.meta{color:var(--muted)}.meta,.connection{font-size:12px}.connection{padding-top:6px;text-align:right}.eyebrow{font-size:11px;font-weight:650;letter-spacing:1.2px;color:var(--muted);margin:0 0 10px}.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:20px 0}.field{display:grid;gap:6px;min-width:0;flex:1}label,.field-label{font-weight:600;font-size:12px}button,input,select{font:inherit;min-height:40px;max-width:100%;border-radius:8px;border:1px solid var(--line);padding:9px 12px;background:var(--panel);color:var(--fg)}button{font-weight:550;cursor:pointer}button:hover:not(:disabled){background:var(--soft)}button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}button.primary:hover:not(:disabled){filter:brightness(.94)}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:2px solid var(--accent);outline-offset:3px}input{width:100%;min-width:0}select{min-width:0}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px}.stat,.card,.panel,.detail,.login{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:19px}.stat strong{display:block;font-size:27px;font-weight:600;letter-spacing:-.6px}.stat span{font-size:12px;color:var(--muted)}.card{margin:12px 0}.card-head,.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.card-head>div{min-width:0}.goal{font-weight:650;font-size:15px;overflow-wrap:anywhere}.badge{display:inline-block;padding:4px 9px;font-size:11px;font-weight:600;border-radius:20px;background:var(--soft);color:var(--accent);white-space:nowrap}.badge.error{color:var(--bad);background:transparent;border:1px solid var(--bad)}.badge.warning{color:var(--warn);background:transparent;border:1px solid var(--warn)}.row,.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.empty{text-align:center;padding:44px 22px;color:var(--muted);border:1px dashed var(--line);border-radius:8px}.empty h2{color:var(--fg)}.detail,.login{margin:20px 0}.login input{width:min(460px,100%);margin:10px 8px 0 0}.notice{font-size:13px;line-height:1.6;border-left:3px solid var(--accent);padding:10px 13px;margin:14px 0;background:var(--panel);overflow-wrap:anywhere;white-space:pre-wrap}.error,.error-text{color:var(--bad)}.warn{color:var(--warn)}.path{font:13px/1.65 ui-monospace,Consolas,monospace;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:13px;margin:10px 0 16px}.scope{padding:12px 14px;background:var(--soft);border-radius:8px;margin:14px 0}.scope strong{font-size:13px}.scope p{font-size:12px;margin-bottom:0}.artifact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px;overflow-wrap:anywhere}.artifact span{min-width:0}.artifact button{flex:none}details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}summary{cursor:pointer;color:var(--muted);font-size:12px}pre{font:12px/1.65 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto}dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 14px;margin:14px 0 0}dt{color:var(--muted);font-size:12px}dd{margin:0;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,Consolas,monospace}footer{font-size:12px;color:var(--muted);margin-top:24px}.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.stack{display:grid;gap:10px}.status-title{font-size:14px;font-weight:600}.status-copy{font-size:13px;color:var(--muted);overflow-wrap:anywhere}.status-panel{margin-top:18px}.toolbar label{color:var(--muted)}[hidden]{display:none!important}
+@media(max-width:560px){main{padding:16px}header{flex-direction:column;gap:6px;margin-bottom:18px}.brand{margin-bottom:13px}h1{font-size:22px}.connection{text-align:left;padding:0}.stats{gap:7px}.stat{padding:12px}.stat strong{font-size:24px}.card-head{flex-direction:column;gap:9px}.toolbar select{width:100%}.toolbar button{flex:1}.card,.panel,.detail,.login{padding:16px}.split{grid-template-columns:1fr}.row button,.actions button{flex:1;white-space:normal}.artifact{flex-wrap:wrap}dl{grid-template-columns:minmax(0,1fr)}dd{margin-bottom:6px}}
+.stat{background:transparent;border:0;border-right:1px solid var(--line);border-radius:0;padding:4px 16px}.stat:last-child{border-right:0}.stat strong{font-size:24px}.brand{font-weight:550;color:var(--muted);margin-bottom:12px}.inline-detail{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;margin:16px 0 0;padding:16px 0 0}.inline-detail h2{overflow-wrap:anywhere;min-width:0}.inline-detail .section-head{align-items:center;margin-bottom:12px}.inline-detail .section-head button{flex:none}.inline-detail details{margin-top:12px}.diagnostics{margin-top:20px}h1{font-size:21px;letter-spacing:-.4px}button{font-weight:500}.scope{background:transparent;border-left:2px solid var(--line);border-radius:0;padding:2px 12px}</style>
+</head>
+<body>
+<main class="compact"><div class="brand">Project Relay</div><div class="card" id="card"><h1>File access</h1><p class="muted" id="status">Loading file request…</p></div></main>
+<script>
+(()=>{'use strict';
+const card=document.getElementById('card'),pending=new Map();
+let seq=1,hostReady=false,data=null,approval=null,busy=false,refreshed=false,prepareError=false;
+const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e};
+function request(method,params,timeout=15000){return new Promise((resolve,reject)=>{if(window.parent===window){reject(Error('no host'));return}
+  const id=seq++,timer=setTimeout(()=>{pending.delete(id);reject(Error('The host did not respond: '+method))},timeout);
+  pending.set(id,{resolve,reject,timer});window.parent.postMessage({jsonrpc:'2.0',id,method,params},'*')})}
+const post=message=>window.parent.postMessage({jsonrpc:'2.0',...message},'*');
+window.addEventListener('message',event=>{if(event.source!==window.parent)return;const m=event.data;if(!m||m.jsonrpc!=='2.0')return;
+  if(typeof m.method==='string'&&Object.hasOwn(m,'id')){
+    if(m.method==='ping'||m.method==='ui/resource-teardown')post({id:m.id,result:{}});
+    else post({id:m.id,error:{code:-32601,message:'Method not found'}});return}
+  const p=pending.get(m.id);if(p&&!m.method){clearTimeout(p.timer);pending.delete(m.id);m.error?p.reject(Error(m.error.message)):p.resolve(m.result);return}
+  if(m.method==='ui/notifications/tool-result')accept(m.params)});
+let lastWidth=0,lastHeight=0,sizeQueued=false;
+function reportSize(){if(!hostReady||sizeQueued)return;sizeQueued=true;requestAnimationFrame(()=>{sizeQueued=false;const html=document.documentElement,original=html.style.height;
+  html.style.height='max-content';const height=Math.ceil(html.getBoundingClientRect().height);html.style.height=original;const width=Math.ceil(window.innerWidth);
+  if(width!==lastWidth||height!==lastHeight){lastWidth=width;lastHeight=height;post({method:'ui/notifications/size-changed',params:{width,height}})}})}
+window.addEventListener('openai:set_globals',()=>accept({structuredContent:window.openai?.toolOutput}));
+function accept(result){const d=result?.structuredContent?.data??result?.structuredContent;if(!d||typeof d!=='object'||!d.request_id)return;
+  if(d.request_id!==data?.request_id){approval=null;refreshed=false;prepareError=false}data=d;render();maybePrepare()}
+// The token is fetched by the card itself from an app-only tool; tool-result _meta is not relied on.
+function maybePrepare(){if(refreshed||!data?.request_id||data.status!=='awaiting_user_approval'||!(typeof window.openai?.callTool==='function'||hostReady))return;refreshed=true;prepareError=false;const requestId=data.request_id;
+  call('prepare_file_snapshot_approval',{request_id:requestId}).then(s=>{
+    if(requestId!==data?.request_id||s?.request_id!==requestId)return;const {approval_token,...rest}=s;
+    approval=typeof approval_token==='string'?{request_id:s.request_id,approval_token}:null;data={...data,...rest};render()})
+    .catch(e=>{if(requestId!==data?.request_id)return;prepareError=true;render('Unable to prepare approval: '+String(e.message||e),true)})}
+async function call(name,args){let r;
+  if(typeof window.openai?.callTool==='function')r=await window.openai.callTool(name,args);
+  else if(hostReady)r=await request('tools/call',{name,arguments:args});
+  else throw Error('Card actions are unavailable. The local operator can use approve_file_snapshot.py.');
+  if(r?.isError)throw Error(r.content?.[0]?.text||'The approval request failed');
+  return r?.structuredContent?.data??JSON.parse(r?.content?.find(c=>c.type==='text')?.text||'{}').data}
+async function say(text){try{if(typeof window.openai?.sendFollowUpMessage==='function'){await window.openai.sendFollowUpMessage({prompt:text});return true}}catch(e){}
+  if(hostReady){try{await request('ui/message',{role:'user',content:[{type:'text',text}]});return true}catch(e){}}
+  return false}
+function details(d){const dl=el('dl');for(const [k,v] of [['File',d.file_name],['Size',d.size_bytes!==undefined?new Intl.NumberFormat('en').format(d.size_bytes)+' bytes':undefined],['SHA-256',d.sha256],['Snapshot ID',d.snapshot_id],['Expires',d.expires_at?new Date(d.expires_at).toLocaleString('en'):undefined]]){if(v===undefined||v===null)continue;dl.append(el('dt',k),el('dd',String(v)))}const box=el('details');box.append(el('summary','Snapshot details'),dl);return box}
+function render(note,isError){card.replaceChildren(el('h1',data?.status==='awaiting_user_approval'?'Allow ChatGPT to read this file?':'File request'));card.setAttribute('aria-live','polite');
+  if(!data){card.append(el('p','Loading file request…','muted'));return}
+  card.append(el('p','Requested file','field-label'),el('div',data.path,'path'));
+  if(data.status==='awaiting_user_approval'){
+    card.append(el('p','Share a read-only copy with ChatGPT.'));const scope=el('div',undefined,'scope');scope.append(el('strong','This file only · Read-only'),el('p','This permission covers only the path above. It does not allow folder access, edits, or execution.','muted'));card.append(scope);
+    const info=el('details');info.append(el('summary','Request details'),el('p','Request expires '+new Date(data.approval_expires_at).toLocaleString('en')+' · Maximum '+new Intl.NumberFormat('en').format(data.max_bytes)+' bytes.','muted'));card.append(info);
+    if(!approval){if(!prepareError)card.append(el('p',refreshed?'Preparing your approval…':'Waiting for request details…','muted'))}
+    else{const row=el('div',undefined,'row'),yes=el('button','Allow once','primary'),no=el('button','Decline');
+      yes.disabled=no.disabled=busy;yes.onclick=()=>decide('approve',[yes,no]);no.onclick=()=>decide('deny',[yes,no]);row.append(yes,no);card.append(row)}}
+  else if(data.status==='ready'){card.append(el('p','Your snapshot is ready. ChatGPT can read this saved copy; later changes to the original file leave it unchanged.'),details(data))}
+  else if(data.status==='capturing'){card.append(el('p','Creating your snapshot…','muted'))}
+  else{card.append(el('p',{denied:'File access declined. No snapshot was created for this request.',expired:'This request or snapshot has expired. Ask ChatGPT for a new request.',failed:'Unable to create the snapshot: '+(data.error||'')}[data.status]||data.status,data.status==='failed'?'error':'muted'))}
+  if(note)card.append(el('p',note,isError?'error':'muted'));
+  if(prepareError||data.status==='capturing'){const retry=el('button','Refresh status');retry.disabled=busy;retry.onclick=refresh;card.append(retry)}reportSize()}
+async function refresh(){if(busy||!data?.request_id)return;busy=true;const requestId=data.request_id;
+  try{const d=await call('get_file_snapshot',{request_id:requestId});if(requestId!==data?.request_id)return;data={...data,...d};approval=null;refreshed=false;prepareError=false;busy=false;render();maybePrepare()}
+  catch(e){busy=false;prepareError=true;render(String(e.message||e),true)}finally{busy=false}}
+async function decide(decision,buttons){if(busy||!approval)return;busy=true;const requestId=approval.request_id;buttons.forEach(b=>b.disabled=true);
+  try{const d=await call('approve_file_snapshot',{request_id:approval.request_id,approval_token:approval.approval_token,decision});
+    if(requestId!==data?.request_id)return;data={...data,...d};approval=null;
+    if(!['ready','denied'].includes(d.status)){busy=false;render();return}
+    const text=d.status==='denied'?'I declined the Project Relay file request for '+data.path+'.':
+      'I allowed a read-only Project Relay snapshot of '+data.path+' (snapshot_id '+d.snapshot_id+', '+d.size_bytes+' bytes, SHA-256 '+d.sha256+'). Use read_file_snapshot_bytes to retrieve all bytes, reconstruct them in a code tool, and independently verify SHA-256 before using the contents.';
+    const sent=await say(text);render(sent?'ChatGPT has been notified.':'Copy this message into ChatGPT: '+text,false)}
+  catch(e){if(requestId!==data?.request_id)return;busy=false;approval=null;prepareError=true;render('The decision could not be confirmed. Refresh status before trying again. '+String(e.message||e),true)}finally{busy=false;if(requestId!==data?.request_id)render()}}
+async function init(){render();
+  if(window.openai?.toolOutput)accept({structuredContent:window.openai.toolOutput});
+  if(window.parent!==window){try{await request('ui/initialize',{appInfo:{name:'workbench-file-snapshot',version:'0.2.0-ui.3'},appCapabilities:{availableDisplayModes:['inline','fullscreen']}});
+    hostReady=true;post({method:'ui/notifications/initialized'});
+    if(typeof ResizeObserver==='function'){const o=new ResizeObserver(reportSize);o.observe(document.documentElement);o.observe(document.body)}reportSize();maybePrepare()}catch(e){}}}
+init();})();
+</script>
+</body>
+</html>

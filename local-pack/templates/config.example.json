@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "data_dir": "<absolute-install-root>/state",
+  "port": 8765,
+  "auth_token": "<generated locally by install.py>",
+  "projects": [],
+  "binary_transfer": {
+    "allowed_download_hosts": []
+  },
+  "file_snapshots": {
+    "max_bytes": 20971520,
+    "snapshot_ttl_seconds": 86400,
+    "approval_ttl_seconds": 900,
+    "max_store_bytes": 1073741824
+  }
+}

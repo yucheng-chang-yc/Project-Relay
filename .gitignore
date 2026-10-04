@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+node_modules/
+state/
+config.json
+*.sqlite3
+*.pem
+*.key
