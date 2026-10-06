@@ -395,8 +395,8 @@
     },
     {
       "path": "tests/test_installation.py",
-      "bytes": 14928,
-      "sha256": "3489b1765f341f768575431a6439ef70cf15a0334d6f20448ce30eb7676a9156"
+      "bytes": 15173,
+      "sha256": "d96b852d9496230b2432bc16ef94f9a270cc871893e406da9ed15767cfcc368a"
     },
     {
       "path": "tests/test_shutdown.py",

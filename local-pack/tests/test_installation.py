@@ -1,3 +1,4 @@
+from contextlib import closing
 import base64
 import hashlib
 import json
@@ -17,7 +18,7 @@ PACKAGE = Path(__file__).resolve().parents[1]
 class CleanInstallTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='workbench-test-')
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
         self.root = self.base / '安裝 root with spaces'
 
     def tearDown(self):
@@ -49,9 +50,9 @@ class CleanInstallTests(unittest.TestCase):
     def test_fresh_file_only_install_at_unicode_space_path_and_real_stdio(self):
         result = self.install()
         self.assertEqual((self.root / 'LICENSE').read_bytes(), (PACKAGE / 'LICENSE').read_bytes())
-        receipt = json.loads((self.root / 'INSTALLATION.json').read_text())
+        receipt = json.loads((self.root / 'INSTALLATION.json').read_text(encoding='utf-8'))
         self.assertEqual((self.root / receipt['app_relative'] / 'LICENSE').read_bytes(), (PACKAGE / 'LICENSE').read_bytes())
-        cfg = json.loads((self.root / 'config' / 'config.json').read_text())
+        cfg = json.loads((self.root / 'config' / 'config.json').read_text(encoding='utf-8'))
         self.assertEqual(cfg['projects'], [])
         self.assertEqual(Path(cfg['data_dir']), self.root / 'state')
         self.assertNotIn(cfg['auth_token'], result.stdout + result.stderr)
@@ -73,7 +74,7 @@ class CleanInstallTests(unittest.TestCase):
         result = self.run_tool(PACKAGE / 'install.py', '--root', self.root)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(before, (self.root / 'config' / 'config.json').read_bytes())
-        self.assertEqual(marker.read_text(), 'existing data')
+        self.assertEqual(marker.read_text(encoding='utf-8'), 'existing data')
 
     def test_plan_is_read_only_and_distinct_installations_have_distinct_tokens(self):
         planned = self.run_tool(PACKAGE / 'install.py', '--root', self.root, '--plan')
@@ -83,12 +84,12 @@ class CleanInstallTests(unittest.TestCase):
         other = self.base / 'second user install'
         run = self.run_tool(PACKAGE / 'install.py', '--root', other)
         self.assertEqual(run.returncode, 0, run.stderr)
-        tokens = [json.loads((p / 'config' / 'config.json').read_text())['auth_token'] for p in (self.root, other)]
+        tokens = [json.loads((p / 'config' / 'config.json').read_text(encoding='utf-8'))['auth_token'] for p in (self.root, other)]
         self.assertNotEqual(*tokens)
 
     def test_demo_git_project_and_stdio(self):
         self.install('--demo')
-        cfg = json.loads((self.root / 'config' / 'config.json').read_text())
+        cfg = json.loads((self.root / 'config' / 'config.json').read_text(encoding='utf-8'))
         self.assertTrue(cfg['projects'][0]['writable'])
         self.assertEqual(Path(cfg['projects'][0]['root']), self.root / 'projects' / 'demo')
         checked = self.check()
@@ -99,16 +100,16 @@ class CleanInstallTests(unittest.TestCase):
         before = (project / 'input.txt').read_bytes()
         self.install()
         config = self.root / 'config' / 'config.json'
-        token = json.loads(config.read_text())['auth_token']
+        token = json.loads(config.read_text(encoding='utf-8'))['auth_token']
         script = self.root / 'maintenance' / 'register_project.py'
         registered = self.run_tool(script, '--root', self.root, '--project', project, '--project-id', 'analysis')
         self.assertEqual(registered.returncode, 0, registered.stderr)
-        cfg = json.loads(config.read_text())
+        cfg = json.loads(config.read_text(encoding='utf-8'))
         self.assertFalse(cfg['projects'][0]['writable'])
         self.assertEqual(cfg['auth_token'], token)
         duplicate = self.run_tool(script, '--root', self.root, '--project', project, '--project-id', 'other')
         self.assertNotEqual(duplicate.returncode, 0)
-        self.assertEqual(len(json.loads(config.read_text())['projects']), 1)
+        self.assertEqual(len(json.loads(config.read_text(encoding='utf-8'))['projects']), 1)
         self.assertEqual((project / 'input.txt').read_bytes(), before)
         checked = self.check()
         self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
@@ -120,7 +121,7 @@ class CleanInstallTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.root.exists())
         self.install('--demo', '--rscript', fake, '--ack-native-r')
-        cfg = json.loads((self.root / 'config' / 'config.json').read_text())
+        cfg = json.loads((self.root / 'config' / 'config.json').read_text(encoding='utf-8'))
         self.assertEqual(cfg['projects'][0]['compute_runtime']['backend'], 'native_trusted')
 
     def test_corrupted_package_is_rejected_before_installation(self):
@@ -143,7 +144,7 @@ class CleanInstallTests(unittest.TestCase):
 
     def test_corrupted_installed_resource_returns_failure(self):
         self.install()
-        receipt = json.loads((self.root / 'INSTALLATION.json').read_text())
+        receipt = json.loads((self.root / 'INSTALLATION.json').read_text(encoding='utf-8'))
         resource = self.root / receipt['app_relative'] / 'ui' / 'file-snapshot.html'
         resource.write_bytes(b'bad resource')
         result = self.check()
@@ -154,7 +155,7 @@ class CleanInstallTests(unittest.TestCase):
         self.install()
         self.assertEqual(self.check().returncode, 0)
         db = self.root / 'state' / 'workbench.sqlite3'
-        with sqlite3.connect(db) as c:
+        with closing(sqlite3.connect(db)) as c, c:
             c.execute('DROP TABLE event_subscriptions')
             c.execute('CREATE TABLE event_subscriptions (active INTEGER)')
             c.execute('INSERT INTO event_subscriptions VALUES (1)')
@@ -188,7 +189,7 @@ class CleanInstallTests(unittest.TestCase):
 
     def test_portable_plugin_entry_uses_selected_clean_installation(self):
         self.install()
-        receipt = json.loads((self.root / 'INSTALLATION.json').read_text())
+        receipt = json.loads((self.root / 'INSTALLATION.json').read_text(encoding='utf-8'))
         entry = self.root / receipt['app_relative'] / 'scripts' / 'plugin_entry.py'
         env = dict(os.environ, PROJECT_WORKBENCH_ROOT=str(self.root))
         run = subprocess.run([sys.executable, str(entry)],
@@ -212,7 +213,7 @@ class CleanInstallTests(unittest.TestCase):
         self.assertEqual(smoke.returncode, 0, smoke.stdout + smoke.stderr)
         self.assertEqual(json.loads(smoke.stdout)['status'], 'PASS')
         config = self.root / 'config' / 'config.json'
-        cfg = json.loads(config.read_text())
+        cfg = json.loads(config.read_text(encoding='utf-8'))
         probe = ("import json,os,zipfile; "
                  "v={'tunnel_present':any(k.upper().startswith('CONTROL_PLANE_') for k in os.environ),"
                  "'admin_present':any(k.upper()=='OPENAI_ADMIN_KEY' for k in os.environ),"
