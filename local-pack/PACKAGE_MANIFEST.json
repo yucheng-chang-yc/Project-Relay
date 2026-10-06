@@ -285,8 +285,8 @@
     },
     {
       "path": "project-workbench/tests/test_runtime.py",
-      "bytes": 19019,
-      "sha256": "6ad866142d9edee5715bd1532a704b5788bfafd0bfd23211a1995ab1e079dc61"
+      "bytes": 19029,
+      "sha256": "acf1ee18490613df861fb6a01252ab7a7c16c22d7912700c97c99fd591adc001"
     },
     {
       "path": "project-workbench/tests/test_shared.py",
@@ -300,8 +300,8 @@
     },
     {
       "path": "project-workbench/tests/test_upgrade.py",
-      "bytes": 5538,
-      "sha256": "a6124d6121ee43327a749df662385a4d718ebafdf18b819153983cf5baba3b75"
+      "bytes": 5548,
+      "sha256": "4851acb1122243fe6723ec52ac7db445f70b032fc6aadec3296b296bc868a074"
     },
     {
       "path": "project-workbench/ui/file-snapshot.html",

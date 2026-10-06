@@ -1,4 +1,4 @@
-d0457c9289fdebb1332430faec64771ed00562d449cd0e822bb09dce8fd555e6  Project-Relay-Local-v0.2.0-preview.3.zip
+d5b445d6aaf7f8c2b42565bf73f0a70690b376132bee9e1b347bea9df68f5f7b  Project-Relay-Local-v0.2.0-preview.3.zip
 1b36e36d26dd51acea27eedadb5c109faca02ebd4e700d51da80d62554bca241  Project-Relay-Plugin-Template-v0.2.0-preview.3.zip
 755887b15381b71bb52647eb774df7212300be43c81fc7bf62b63a445dee3b60  README.md
 77f8bf0dd005658bd39c8df36a0bc55fe6b0112c15e0339c5ef059bc2518a69d  INSTALL.md

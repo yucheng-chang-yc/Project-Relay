@@ -13,7 +13,7 @@ from scripts import upgrade_runtime as upgrade
 class UpgradeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
         self.source = self.base / "new"
         self.target = self.base / "installed"
         self.state = self.base / "state"

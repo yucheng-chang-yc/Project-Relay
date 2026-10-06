@@ -24,7 +24,7 @@ SOURCE = Path(__file__).resolve().parents[1]
 class RuntimeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
         self.root = self.base / "project"
         self.root.mkdir()
         run_git(self.root, ["init", "-b", "main"])
