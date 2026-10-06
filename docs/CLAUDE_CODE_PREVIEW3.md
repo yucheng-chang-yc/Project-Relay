@@ -71,7 +71,7 @@ $RelayKeyFile = '<existing explicitly selected private key-file path>'
 
 If the current source is a hidden prompt, omit `--credential-file` and let the human enter the key in the product's hidden prompt. Never convert a prompt to a new saved key without a specific user request. Check every exit code. Configure produces a fresh profile and Start-Relay.ps1 pointing to the new core. Do not copy the old profile/Start script.
 
-4. Start `& "$RelayTrial\Start-Relay.ps1"` in a retained visible PowerShell window. Verify `/readyz` and `/livez` at the selected health port, exactly one local tunnel client, and MCP command/root pointing to the fresh installation. Do not close that window while serving. Confirm the old service remains stopped. Local observation does not establish ownership of remote clients on other devices.
+4. Start `& "$RelayTrial\Start-Relay.ps1"` in a retained visible PowerShell window. Verify `/readyz` and `/healthz` at the selected health port, exactly one local tunnel client, and MCP command/root pointing to the fresh installation. Do not close that window while serving. Confirm the old service remains stopped. Local observation does not establish ownership of remote clients on other devices.
 5. Generate the matching private Plugin:
 
 ```powershell

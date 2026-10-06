@@ -85,7 +85,7 @@ Keep that terminal open. Prompt mode asks for the runtime key on each doctor/sta
 
 ```powershell
 Invoke-RestMethod 'http://127.0.0.1:8080/readyz'
-Invoke-RestMethod 'http://127.0.0.1:8080/livez'
+Invoke-RestMethod 'http://127.0.0.1:8080/healthz'
 ```
 
 Ready/live is a local client check; verify ChatGPT tools separately. To stop, press Ctrl+C once in the service terminal and allow shutdown to finish. D-004 Windows testing observed all processes/locks gone after 9.5 seconds; that is an observation, not a maximum-time guarantee. Real Ctrl+Break also passed. Verify the client/children exited and the health port closed before restart or rollback. Closing/killing the terminal may leave recovery work.
