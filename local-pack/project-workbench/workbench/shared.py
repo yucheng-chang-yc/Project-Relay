@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import contextlib
+import errno
 import hashlib
 import hmac
 import os
@@ -23,6 +24,19 @@ from . import filesnap
 MAX_BYTES = 20 * 1024 * 1024
 CHUNK = 262144
 TTL = 3600
+PUBLICATION_FIX = "D005-v1"
+
+
+def publication_rejected(error):
+    """Only documented local filesystem rejection codes qualify, never unknown I/O.
+
+    Even these codes require an independent unchanged-target check before releasing
+    the attempt. A successful syscall followed by cleanup/receipt failure never qualifies.
+    """
+    return isinstance(error, OSError) and (
+        error.errno in (errno.EACCES, errno.EPERM, errno.EEXIST, errno.EBUSY,
+                        errno.EROFS, errno.EXDEV, errno.ENOENT, errno.ENOTDIR) or
+        getattr(error, "winerror", None) in (2, 3, 5, 17, 19, 32, 33, 80, 183))
 
 
 def folder_path(raw):
@@ -203,6 +217,9 @@ class SharedFolderStore:
                     write_id TEXT PRIMARY KEY, started REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS shared_write_resolutions (
                     write_id TEXT PRIMARY KEY, at REAL NOT NULL, observed_sha256 TEXT NOT NULL, note TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS shared_publish_failures (
+                    id INTEGER PRIMARY KEY, write_id TEXT NOT NULL, at REAL NOT NULL, phase TEXT NOT NULL,
+                    error_type TEXT NOT NULL, errno INTEGER, winerror INTEGER, outcome TEXT NOT NULL);
             """)
 
     def request(self, path, access, idempotency_key):
@@ -447,6 +464,80 @@ class SharedFolderStore:
             return self.write_receipt(c.execute("SELECT * FROM shared_writes WHERE id=?", (write_id,)).fetchone())
 
     def commit_write(self, write_id):
+        progress = {"phase": "validation", "publication_invoked": False}
+        try:
+            return self._commit_write(write_id, progress)
+        except Exception as error:
+            # Runtime.connection has rolled back/closed first. Recovery metadata must
+            # survive that rollback, and must not erase a genuine crash barrier.
+            try:
+                outcome, row = self.record_publication_failure(write_id, progress, error)
+            except Exception:
+                raise WorkbenchError("Shared write failed; diagnostic persistence could not be confirmed. "
+                    "Inspect locally before retrying. write_id=" + write_id) from error
+            codes = "error=" + type(error).__name__ + ", errno=" + str(getattr(error, "errno", None)) + ", winerror=" + str(getattr(error, "winerror", None))
+            if outcome == "committed":
+                receipt = self.write_receipt(row)
+                receipt["warning"] = "Publication committed; follow-up step failed (phase=" + progress["phase"] + ", " + codes + ")"
+                return receipt
+            if outcome == "not_published":
+                if progress["phase"] == "validation":
+                    raise  # Preserve specific SHA/grant/size validation guidance.
+                raise WorkbenchError("Shared write was not published. write_id=" + write_id + ", phase=" + progress["phase"] + ", " + codes +
+                    ". Correct the local cause, then retry the same write ID while pending; grant reset is unnecessary.") from error
+            if outcome == "uncertain":
+                raise WorkbenchError("Shared publication is uncertain. write_id=" + write_id + ", phase=" + progress["phase"] + ", " + codes +
+                    ". Do not replay. Inspect exact target/SHA locally and use maintenance/resolve_shared_write.py. "
+                    "Renewing the grant or restarting Relay will not clear this state.") from error
+            raise  # Unknown write, revoked grant or non-publication validation failure.
+
+    def record_publication_failure(self, write_id, progress, error):
+        """Persist only bounded codes/phase, never error text, file contents or secrets."""
+        with self.runtime.connection(write=True) as c:
+            row = c.execute("SELECT w.*,g.path AS root,g.identity,g.revoked FROM shared_writes w "
+                "JOIN shared_grants g ON g.id=w.grant_id WHERE w.id=?", (write_id,)).fetchone()
+            if not row:
+                return "unknown", None
+            attempt = c.execute("SELECT 1 FROM shared_publish_attempts WHERE write_id=?", (write_id,)).fetchone()
+            if row["state"] == "committed" and progress["phase"] in ("database_receipt", "staging_cleanup"):
+                outcome = "committed"
+            elif row["state"] == "committed":
+                outcome = "validation_error"
+            elif row["state"] == "resolved_not_replayed":
+                outcome = "resolved_not_replayed"
+            else:
+                # No syscall invoked is decisive for this invocation. For syscall
+                # rejection require known codes AND intact original bytes/identity.
+                # An older attempt must never be cleared by a validation-only retry.
+                rejected = progress["phase"] == "publication" and publication_rejected(error)
+                if rejected:
+                    try:
+                        parts = relative_path(row["path"])
+                        with pin(row["root"], parts[:-1]) as (d, identity):
+                            if identity != row["identity"]:
+                                raise WorkbenchError("Folder identity changed")
+                            try:
+                                observed = digest(read_exact(d, parts[-1]))
+                            except FileNotFoundError:
+                                observed = ""
+                            rejected = observed == row["expected_sha256"]
+                    except Exception:
+                        rejected = False
+                safe = progress.get("own_attempt", False) and (not progress["publication_invoked"] or rejected)
+                outcome = "not_published" if not attempt or safe else "uncertain"
+                if attempt and safe:
+                    c.execute("DELETE FROM shared_publish_attempts WHERE write_id=?", (write_id,))
+                    if row["state"] == "uncertain":
+                        # Revocation/expiry can happen between journal and reacquiring
+                        # the transaction; their staging deletion must remain final.
+                        state = "revoked" if row["revoked"] else ("expired" if row["expires"] <= time.time() else "pending")
+                        c.execute("UPDATE shared_writes SET state=? WHERE id=?", (state, write_id))
+            c.execute("INSERT INTO shared_publish_failures(write_id,at,phase,error_type,errno,winerror,outcome) VALUES(?,?,?,?,?,?,?)",
+                (write_id, time.time(), progress["phase"], type(error).__name__[:100],
+                 getattr(error, "errno", None), getattr(error, "winerror", None), outcome))
+            return outcome, row
+
+    def _commit_write(self, write_id, progress):
         with self.runtime.connection(write=True) as c:
             row = self.write_row(c, write_id)
             if row["state"] == "committed":
@@ -454,7 +545,8 @@ class SharedFolderStore:
             if row["state"] != "pending" or row["offset"] != row["size"]:
                 raise WorkbenchError("All declared bytes are required before commit")
             if c.execute("SELECT 1 FROM shared_publish_attempts WHERE write_id=?", (write_id,)).fetchone():
-                raise WorkbenchError("Prior publication is uncertain; inspect the target locally before starting a new write. Do not replay it.")
+                raise WorkbenchError("Prior publication is uncertain; inspect locally and use maintenance/resolve_shared_write.py. "
+                    "Grant reset/restart will not clear it. Do not replay. write_id=" + write_id)
             raw = (self.uploads / row["id"]).read_bytes()
             if len(raw) != row["size"] or digest(raw) != row["sha256"]:
                 raise WorkbenchError("Staged file SHA/size differs from declared content")
@@ -470,6 +562,7 @@ class SharedFolderStore:
                 if existing != row["expected_sha256"]:
                     raise WorkbenchError("Existing file SHA changed; no overwrite was performed")
                 temp = ".relay-write-" + secrets.token_hex(16)
+                progress["phase"] = "temporary_file"
                 fd = d.open_file(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
                 try:
                     with os.fdopen(fd, "wb") as f:
@@ -487,6 +580,8 @@ class SharedFolderStore:
                     # Persist the attempt before changing the target. A process crash between
                     # filesystem publication and the DB receipt blocks replay rather than guessing.
                     c.execute("INSERT INTO shared_publish_attempts VALUES(?,?)", (write_id, time.time()))
+                    progress["own_attempt"] = True
+                    progress["phase"] = "prepublication"
                     c.commit()
                     c.execute("BEGIN IMMEDIATE")
                     live = self.write_row(c, write_id)
@@ -497,10 +592,9 @@ class SharedFolderStore:
                     except FileNotFoundError:
                         latest = ""
                     if latest != existing:
-                        c.execute("DELETE FROM shared_publish_attempts WHERE write_id=?", (write_id,))
-                        c.commit()
-                        c.execute("BEGIN IMMEDIATE")
                         raise WorkbenchError("File changed before replacement; no overwrite was performed")
+                    progress["phase"] = "publication"
+                    progress["publication_invoked"] = True
                     if existing == "":
                         # Hard-link publication refuses a concurrent create (no clobber).
                         if os.name == "nt":
@@ -511,13 +605,24 @@ class SharedFolderStore:
                         os.replace(d.path / temp, d.path / name)
                     else:
                         os.replace(temp, name, src_dir_fd=d.fd, dst_dir_fd=d.fd)
-                finally:
+                except BaseException:
+                    # Preserve the first failure and its phase even if private-temp
+                    # cleanup also fails. A process interruption keeps the attempt.
+                    try:
+                        d.unlink(temp)
+                    except Exception:
+                        pass
+                    raise
+                else:
+                    progress["phase"] = "temporary_cleanup"
                     try:
                         d.unlink(temp)
                     except FileNotFoundError:
                         pass  # Atomic overwrite already moved this file to the target.
+            progress["phase"] = "database_receipt"
             c.execute("UPDATE shared_writes SET state='committed' WHERE id=?", (write_id,))
             receipt = self.write_receipt(c.execute("SELECT * FROM shared_writes WHERE id=?", (write_id,)).fetchone())
+        progress["phase"] = "staging_cleanup"
         (self.uploads / row["id"]).unlink(missing_ok=True)
         return receipt
 

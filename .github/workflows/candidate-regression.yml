@@ -7,6 +7,29 @@ on:
 permissions:
   contents: read
 jobs:
+  d005-hotfix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Runtime hotfix regression
+        working-directory: local-pack/project-workbench
+        run: python -W error::ResourceWarning -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Prepare exact source overlay
+        run: python scripts/hotfixes/D005/prepare.py
+      - name: Extract the SHA-verified original Local package
+        run: python scripts/verify_candidate.py --release-dir candidates/v0.2.0-preview.3 --extract hotfix-baseline
+      - name: Apply, integrity, retry and rollback fixtures
+        run: python scripts/hotfixes/D005/test_patch_installer.py --local-pack hotfix-baseline/Project-Relay-Local-v0.2.0-preview.3
   test:
     strategy:
       fail-fast: false

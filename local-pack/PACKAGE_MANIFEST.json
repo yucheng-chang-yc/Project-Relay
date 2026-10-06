@@ -294,6 +294,11 @@
       "sha256": "81287aad090c047dc8b13e6a66e5c372b2bfb2953bb254ea651b0f6327306d0f"
     },
     {
+      "path": "project-workbench/tests/test_shared_publication.py",
+      "bytes": 14021,
+      "sha256": "1e85dcaed228945a8ce21d7e5f44b2abd9182245c989122cc67fc41431f0efa3"
+    },
+    {
       "path": "project-workbench/tests/test_task_progress.py",
       "bytes": 7883,
       "sha256": "1a534313288bf4ee767a49b31ede9261d878d420047f64fa2d956792026a7d61"
@@ -375,8 +380,8 @@
     },
     {
       "path": "project-workbench/workbench/shared.py",
-      "bytes": 31052,
-      "sha256": "71d1eb22f2469d7802a3fc29fff15651d14e5076858d43e69a58bc420d43cc60"
+      "bytes": 37843,
+      "sha256": "f66c8b3c6f9012081a257d07c7d2675fa02fb4f3eafc73d9bdc5fc9a56719970"
     },
     {
       "path": "project-workbench/workbench/worker.py",
