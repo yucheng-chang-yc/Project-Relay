@@ -56,7 +56,7 @@ $RelayAppId = Read-Host 'Registered ChatGPT app ID or app URL'
 python "$RelayRoot\maintenance\connect_chatgpt.py" --root "$RelayRoot" package --app-id $RelayAppId
 ```
 
-Import `connection\generated\Project-Relay-Plugin-v0.2.0-preview.2.zip` from your installation root using **Plugin Creator**. Complete account binding/review. Update an existing Project Relay/Project Workbench plugin identity when available. The stable internal name is `project-workbench` and app key `workbench-mcp`. `.app.json` is generated automatically; no JSON editing/re-zipping is needed. See [official packaging instructions](https://developers.openai.com/plugins/build/plugins).
+Import `connection\generated\Project-Relay-Plugin-v0.2.0-preview.3.zip` from your installation root using **Plugin Creator**. Complete account binding/review. Update an existing Project Relay/Project Workbench plugin identity when available. The stable internal name is `project-workbench` and app key `workbench-mcp`. `.app.json` is generated automatically; no JSON editing/re-zipping is needed. See [official packaging instructions](https://developers.openai.com/plugins/build/plugins).
 
 Identical generation preserves the package. Use `package --app-id <new-actual-id> --replace` when deliberately changing binding, then update the account plugin. The generated ZIP has four files: `plugin.json`, `.app.json`, `skills/project-workbench/SKILL.md` and `LICENSE`. The universal Template is source material, not a connected Plugin package.
 
@@ -96,7 +96,7 @@ The external full tunnel-client may start its own Codex app-server companion. Th
 
 ## Restart and upgrade
 
-The same installation/tunnel/app reuses its Plugin after restart. Run one client for a tunnel. A changed app ID requires package regeneration/account update. A changed installation/tunnel/client requires a fresh bootstrap here; account configuration must point at the intended tunnel. Preview validation targets matching Local/Plugin versions. The `.1` host pairing passed; the `.2` private account Plugin update/readback and live project smoke also passed on the retained baseline service. A Plugin update uses the existing account identity through Plugin Creator, not a new app by default.
+The same installation/tunnel/app reuses its Plugin after restart. Run one client for a tunnel. A changed app ID requires package regeneration/account update. A changed installation/tunnel/client requires a fresh bootstrap here; account configuration must point at the intended tunnel. Preview validation targets matching Local/Plugin versions. The `.1` host pairing passed; the exact `.2` account import is still pending. A Plugin update uses the existing account identity through Plugin Creator, not a new app by default.
 
 ## Troubleshooting
 
@@ -109,4 +109,4 @@ The same installation/tunnel/app reuses its Plugin after restart. Run one client
 | Widget will not open | Host error plus server resource diagnostics |
 | Task completes without reply | Stored result and Events subscription/notification chat |
 
-See [VERIFICATION.md](VERIFICATION.md): `.1` real Windows bootstrap and the ChatGPT/Claude/R path passed, and D-004 shutdown passed separately. `.2` carries those changes with refreshed release metadata and licensing; its exact ZIP Windows check and private Plugin import both passed. The live app remains on the retained `.1 + D-004` installation; the isolated `.2` root was not started on the live tunnel.
+See [VERIFICATION.md](VERIFICATION.md): `.1` real Windows bootstrap and the ChatGPT/Claude/R path passed, and D-004 shutdown passed separately. `.2` carries those changes with refreshed release metadata and licensing; its exact ZIP Windows check and new Plugin import remain distinct acceptance items.

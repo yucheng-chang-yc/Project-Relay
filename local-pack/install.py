@@ -14,8 +14,8 @@ from support import check_entries, default_root, mcp_command_text, mcp_stdio_arg
 from verify_package import verify
 
 SOURCE = Path(__file__).resolve().parent
-PACKAGE_VERSION = '0.2.0-preview.2'
-RUNTIME_VERSION = '0.2.0-spike.4'
+PACKAGE_VERSION = '0.2.0-preview.3'
+RUNTIME_VERSION = '0.2.0-preview.3'
 NATIVE_ACK = 'local-account-r-execution-without-os-containment'
 
 

@@ -42,7 +42,11 @@ def main(argv=None):
                 {'jsonrpc': '2.0', 'id': 4, 'method': 'tools/call',
                  'params': {**params, 'name': 'list_projects', 'arguments': {}}},
                 {'jsonrpc': '2.0', 'id': 5, 'method': 'resources/read',
-                 'params': {**params, 'uri': 'ui://project-workbench/file-snapshot-v3.html'}}]
+                 'params': {**params, 'uri': 'ui://project-workbench/file-snapshot-v3.html'}},
+                {'jsonrpc': '2.0', 'id': 6, 'method': 'resources/read',
+                 'params': {**params, 'uri': 'ui://project-workbench/shared-folder-v1.html'}},
+                {'jsonrpc': '2.0', 'id': 7, 'method': 'tools/call',
+                 'params': {**params, 'name': 'list_shared_folders', 'arguments': {}}}]
             cmd = [receipt['python'], str(root / 'maintenance' / 'launch.py'), '--root', str(root), '--mode', 'stdio']
             run = subprocess.run(cmd, input=''.join(json.dumps(m) + '\n' for m in messages),
                                  text=True, encoding='utf-8', capture_output=True, timeout=30)
@@ -52,16 +56,21 @@ def main(argv=None):
             if len(rows) != len(messages) or any('error' in r for r in rows):
                 raise ValueError('MCP self-test returned invalid or error responses')
             by_id = {r['id']: r['result'] for r in rows}
-            if set(by_id) != {1, 2, 3, 4, 5}:
+            if set(by_id) != {1, 2, 3, 4, 5, 6, 7}:
                 raise ValueError('MCP response IDs differ')
-            for ident in (1, 2, 3, 5):
+            actual = by_id[1].get('_meta', {}).get('io.modelcontextprotocol/serverInfo', {}).get('version')
+            if actual != receipt['runtime_version']:
+                raise ValueError('Actual MCP runtime version differs from the installation receipt')
+            result['actual_mcp_runtime_version'] = actual
+            for ident in (1, 2, 3, 5, 6):
                 r = by_id[ident]
                 if r.get('ttlMs') != 300000 or r.get('cacheScope') != 'public':
                     raise ValueError('Missing discovery/resource caching hints')
             names = {t['name'] for t in by_id[2]['tools']}
             needed = {'request_file_snapshot', 'get_file_snapshot', 'read_file_snapshot_bytes',
-                      'start_codex_task', 'start_claude_task', 'get_task_result'}
-            if not needed <= names or by_id[4].get('isError'):
+                      'start_codex_task', 'start_claude_task', 'get_task_result',
+                      'request_shared_folder', 'read_shared_file_bytes', 'commit_shared_file_write', 'archive_task'}
+            if not needed <= names or by_id[4].get('isError') or by_id[7].get('isError'):
                 raise ValueError('Required tools or project query failed')
             content = by_id[5]['contents'][0]
             if content['mimeType'] != 'text/html;profile=mcp-app' or '</html>' not in content['text']:
@@ -71,6 +80,12 @@ def main(argv=None):
             result['checks']['snapshot_template'] = True
             result['tool_count'] = len(names)
             result['snapshot_template_sha256'] = hashlib.sha256(content['text'].encode()).hexdigest()
+            shared = by_id[6]['contents'][0]
+            if shared['mimeType'] != 'text/html;profile=mcp-app' or '</html>' not in shared['text']:
+                raise ValueError('Shared-folder approval resource is incomplete')
+            result['checks']['shared_folder_template'] = True
+            result['checks']['shared_folder_query'] = True
+            result['shared_folder_count'] = len(by_id[7]['structuredContent']['data'])
         result['status'] = 'PASS'
     except (ValueError, KeyError, OSError, subprocess.SubprocessError) as exc:
         result['error'] = str(exc) if isinstance(exc, ValueError) else type(exc).__name__

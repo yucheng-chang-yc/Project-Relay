@@ -7,7 +7,7 @@ $RelayRoot = Join-Path $env:USERPROFILE 'ProjectRelay'
 python "$RelayRoot\maintenance\connect_chatgpt.py" --root "$RelayRoot" package --app-id $RelayAppId
 ```
 
-Set `RelayAppId` to the actual app ID or ChatGPT app URL returned by registration. The generator creates `connection/generated/Project-Relay-Plugin-v0.2.0-preview.2.zip` with the registered app dependency, manifest, workflow skill and MIT LICENSE notice. Import that generated ZIP with Plugin Creator. Keep this generated account-specific package private.
+Set `RelayAppId` to the actual app ID or ChatGPT app URL returned by registration. The generator creates `connection/generated/Project-Relay-Plugin-v0.2.0-preview.3.zip` with the registered app dependency, manifest, workflow skill and MIT LICENSE notice. Import that generated ZIP with Plugin Creator. Keep this generated account-specific package private.
 
 The template contains no app ID, local endpoint or credentials. Importing the template alone does not establish local tool access. The Local Runtime README provides the complete install, tunnel and registration route. The `project-workbench` package identity is retained across updates.
 

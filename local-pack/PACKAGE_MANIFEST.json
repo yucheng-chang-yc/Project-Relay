@@ -1,7 +1,7 @@
 {
   "schema": "workbench.release.v1",
-  "package_version": "0.2.0-preview.2",
-  "runtime_version": "0.2.0-spike.4",
+  "package_version": "0.2.0-preview.3",
+  "runtime_version": "0.2.0-preview.3",
   "files": [
     {
       "path": "Install.ps1",
@@ -15,8 +15,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 16037,
-      "sha256": "6e821cf76d5b606e07176def4e492098af5a4735c771db02c0a7e01b370420ba"
+      "bytes": 17108,
+      "sha256": "755887b15381b71bb52647eb774df7212300be43c81fc7bf62b63a445dee3b60"
     },
     {
       "path": "Test-FreshInstall.ps1",
@@ -25,8 +25,8 @@
     },
     {
       "path": "build.py",
-      "bytes": 4764,
-      "sha256": "43be8ac6e4a57c961230f063cae6e6bf3ee47f53d42962206abf1a7e900f3f09"
+      "bytes": 4766,
+      "sha256": "13acb7c79c8d56980632eb5dec5e6a66d2356e8331db571708a21e79aa0e5da2"
     },
     {
       "path": "docs/ACCEPTANCE.md",
@@ -35,38 +35,43 @@
     },
     {
       "path": "docs/CAPABILITIES.md",
-      "bytes": 2934,
-      "sha256": "6ec34fa26e4ea234e73a7aaee220c7136b41f2d9af42a2c4fd6b62f7c3a175c5"
+      "bytes": 3498,
+      "sha256": "4c2b9e98d41a1d521bd008721e1e1ce56d6105de3af1f2094aec93ffe4e1f63d"
     },
     {
       "path": "docs/CONNECT_CHATGPT.md",
       "bytes": 10634,
-      "sha256": "8cece70f061a9e0eaa7fe8feba3c08735f09f08ae0e64e4aba7a1a5b5d6f36b2"
+      "sha256": "2eed01e407b526bb080649a6a5a14a3151d27c4e281dd2b4d0f3f3b60ae39f2d"
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "bytes": 4727,
-      "sha256": "bb32ee65ae5e639cde5bc73ccea6bbec2b635848340a2257f4097c948dfc1639"
+      "bytes": 4714,
+      "sha256": "879672424f38040f2809fa82a977c46fe1c448b431324f772aa651981cc117f1"
     },
     {
       "path": "docs/INSTALL.md",
-      "bytes": 7174,
-      "sha256": "4995e88799254f12445a69575f0ecc1adbba1c67fea4c863d098487ef97c13a7"
+      "bytes": 7569,
+      "sha256": "77f8bf0dd005658bd39c8df36a0bc55fe6b0112c15e0339c5ef059bc2518a69d"
     },
     {
       "path": "docs/PLUGIN_TEMPLATE.md",
       "bytes": 1173,
-      "sha256": "d2b7be18dd4b14f4c9372d682e00e894e8fe67414439f0ae826c6a2c4f13f86f"
+      "sha256": "62c6d4578e1e0ff8abe6a0bed8116580182dfd984f0bc04e1306e7080409adb5"
+    },
+    {
+      "path": "docs/PREVIEW3_CHANGES.md",
+      "bytes": 6078,
+      "sha256": "ce41d31625ebe53902f7572f65452ece21df1c3a5b8ed220ebcc48a63102f27b"
     },
     {
       "path": "docs/RELEASE_NOTES.md",
-      "bytes": 3684,
-      "sha256": "7860fb31b812061494743cef23583473cfa727f3324a99f2a2a3bc1e6fd96d6e"
+      "bytes": 490,
+      "sha256": "504eb7a06c4775bbc4b6a440a1b87f4b626efe4e7970e7f4c642cc9d4af3c57a"
     },
     {
       "path": "docs/SECURITY.md",
-      "bytes": 4890,
-      "sha256": "63607a030ccd82f2ab6736b92d2785b4145186a1f8f72c65cd3465682f9e1d91"
+      "bytes": 5680,
+      "sha256": "a119667ee1f0a22d0934b3c73c98dd388b2816374aee6eaf19536bd17649ec1d"
     },
     {
       "path": "docs/UI_CHANGES.md",
@@ -79,9 +84,14 @@
       "sha256": "4cea2f5629a364ab41b425e7c3a3ac8be9989b58d1c044cba056c2a4bf012751"
     },
     {
+      "path": "docs/VERIFICATION_PREVIEW3.md",
+      "bytes": 2615,
+      "sha256": "e54fe60007117e25add3317ad29b187a6a7e380cda31870684102f0e52f2dd30"
+    },
+    {
       "path": "install.py",
-      "bytes": 10167,
-      "sha256": "c414e78ee38136265345da69d5270b18d992442e6265a474b6ca8bca3982cf4f"
+      "bytes": 10169,
+      "sha256": "fed321cd458f29375c04dbd2aa73c4603fefeaf6f7a223062e6e79dd12bab04c"
     },
     {
       "path": "project-workbench/.github/workflows/regression.yml",
@@ -111,7 +121,7 @@
     {
       "path": "project-workbench/plugin.json",
       "bytes": 916,
-      "sha256": "a6f11c5be52838fba24a95843c75eb540ed6780adc547aa31cb3ebd23cd7b16e"
+      "sha256": "3c86dcc5ec23e07b1c069710b6c5933edb49a2cdacd7831faaf221f294056578"
     },
     {
       "path": "project-workbench/scripts/approve_file_snapshot.py",
@@ -170,8 +180,8 @@
     },
     {
       "path": "project-workbench/skills/project-workbench/SKILL.md",
-      "bytes": 3832,
-      "sha256": "64ce2b927909302f19864ea6448b7ea5935d0dcd45d203240edae2f186b3a406"
+      "bytes": 6178,
+      "sha256": "1d205517cdfc0bc9e0a24de26815aa4809e1474023ae118dc3bc0e3caff40703"
     },
     {
       "path": "project-workbench/spikes/TRIAL_RUNBOOK.md",
@@ -275,8 +285,18 @@
     },
     {
       "path": "project-workbench/tests/test_runtime.py",
-      "bytes": 18891,
-      "sha256": "f21ead70977fccd7cd96b4f46031e4227060d37fa90f2081a69d7ac1ea98d0d2"
+      "bytes": 19019,
+      "sha256": "6ad866142d9edee5715bd1532a704b5788bfafd0bfd23211a1995ab1e079dc61"
+    },
+    {
+      "path": "project-workbench/tests/test_shared.py",
+      "bytes": 13224,
+      "sha256": "81287aad090c047dc8b13e6a66e5c372b2bfb2953bb254ea651b0f6327306d0f"
+    },
+    {
+      "path": "project-workbench/tests/test_task_progress.py",
+      "bytes": 7883,
+      "sha256": "1a534313288bf4ee767a49b31ede9261d878d420047f64fa2d956792026a7d61"
     },
     {
       "path": "project-workbench/tests/test_upgrade.py",
@@ -289,9 +309,14 @@
       "sha256": "167d10bafa5f06d93119382b297aa4d1021543a6f0106b873a248aca3c54f1bb"
     },
     {
+      "path": "project-workbench/ui/shared-folder.html",
+      "bytes": 14453,
+      "sha256": "fe0381d8d16ecb25b6841b5fe850e221db228e3f3f2971b579e43bfde8d24270"
+    },
+    {
       "path": "project-workbench/ui/tasks.html",
-      "bytes": 21183,
-      "sha256": "e0f7f2c40000b13365979962c5fa93539ea017de9dda2ecc0522819a31a4fc12"
+      "bytes": 26028,
+      "sha256": "4c89d8c001122a049eb2fcf631ae1c5b33484ff790ff2cbb101d3478683d0a32"
     },
     {
       "path": "project-workbench/ui/transfer-spike.html",
@@ -300,8 +325,8 @@
     },
     {
       "path": "project-workbench/workbench/__init__.py",
-      "bytes": 79,
-      "sha256": "a142aaf440a38080ecadd968416e9465c6ea094295a5eadee71946672cb87f7d"
+      "bytes": 32,
+      "sha256": "5b680896dadb9b422164b4b2cba4fcadbb39b4d2591722d36bb58748de2e0756"
     },
     {
       "path": "project-workbench/workbench/adapters.py",
@@ -310,8 +335,8 @@
     },
     {
       "path": "project-workbench/workbench/core.py",
-      "bytes": 50081,
-      "sha256": "45447d8ee496327e0ecf6b6418bbcd40da6b26b961cc036018863e39813012a8"
+      "bytes": 55203,
+      "sha256": "8d4fb4bafd314a0fdc9fde51fad441c0efee36c36e6d0d0ce7b98ca03d899fdf"
     },
     {
       "path": "project-workbench/workbench/events.py",
@@ -330,8 +355,8 @@
     },
     {
       "path": "project-workbench/workbench/mcp.py",
-      "bytes": 32407,
-      "sha256": "41960f2f0fc385782ea92726ba4177c09e38315024c0e5f98438b629810020fc"
+      "bytes": 39024,
+      "sha256": "3235738ae2dc658317a177bbc1b23bb7b8d36f18ce9431d546afeb320890a606"
     },
     {
       "path": "project-workbench/workbench/proctree.py",
@@ -349,9 +374,14 @@
       "sha256": "fce225f20a85dcdab50857d540ddcdccdd4aa36cfaa828ec143d435f5564584c"
     },
     {
+      "path": "project-workbench/workbench/shared.py",
+      "bytes": 31052,
+      "sha256": "71d1eb22f2469d7802a3fc29fff15651d14e5076858d43e69a58bc420d43cc60"
+    },
+    {
       "path": "project-workbench/workbench/worker.py",
-      "bytes": 13391,
-      "sha256": "815c901e7b08c29d45c524e5fe481aecf2cc5b20059e332ccb9705c6f26170a7"
+      "bytes": 15193,
+      "sha256": "4e62f3ace2ba887df661148b3f79a249697d15a45ee6a53b350820d525464d69"
     },
     {
       "path": "templates/config.example.json",
@@ -380,13 +410,13 @@
     },
     {
       "path": "tests/ui-interactions.cjs",
-      "bytes": 15854,
-      "sha256": "6f42751e78d082e34ded899e68d4cd06fb701a162a9cbb21572da2193ce2ef4c"
+      "bytes": 20864,
+      "sha256": "40f6430e858eea21f0cb5418d68107bb6dac27f3336ed985d2dacec192d69752"
     },
     {
       "path": "tools/check_install.py",
-      "bytes": 4960,
-      "sha256": "1b246062a55af894d46103c06ee76745424c0824a179c066e57d26cce302529d"
+      "bytes": 6192,
+      "sha256": "e535fd6f1de05d960f133c70f4f961aa10060ff5d1c7b00076420f4c6ca707ff"
     },
     {
       "path": "tools/connect_chatgpt.py",
@@ -402,6 +432,11 @@
       "path": "tools/register_project.py",
       "bytes": 3729,
       "sha256": "1ac6d17e870f3f23841dadbf08a52e314db3578c7c7759ade541d4fe108ae387"
+    },
+    {
+      "path": "tools/resolve_shared_write.py",
+      "bytes": 1042,
+      "sha256": "562b9df07283d2b5c0bfb65a074c1216fca01a9a5b312830c713923c744966b4"
     },
     {
       "path": "tools/smoke_test.py",

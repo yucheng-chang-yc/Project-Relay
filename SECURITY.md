@@ -37,3 +37,7 @@ Tasks have bounded timeouts/cancellation. Computation has 1–120-second limits,
 ## License and private data
 
 Project Relay source is MIT-licensed. The release ZIPs contain source, synthetic fixtures and templates, without configured installations, developer credentials, task databases or captured user artifacts. Generated per-app Plugin ZIPs include the MIT notice and app mapping; keep them private. Licensing does not restrict which files an authorized local process can read.
+
+## Shared folders (preview.3 candidate)
+
+An approved grant includes current/future descendants until revoked, including secrets deliberately placed there. Revocation does not recall bytes already returned; an in-flight serialized operation may finish first. Runtime/config/registered-project overlap is refused. File APIs reject links/junctions/hardlinks, traversal, ADS and Git metadata. Windows ancestor handles pin the selected directories; these controls do not contain trusted local executors or local writers. Existing SHA is checked before atomic overwrite with a remaining local-writer race window. Uncertain publication requires the local-only recovery helper; originals are not replayed. Host private-tool/token isolation remains an explicit assumption. See PREVIEW3_CHANGES.md.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "project-workbench",
-  "version": "0.2.0-preview.2",
+  "version": "0.2.0-preview.3",
   "description": "Connect ChatGPT to local projects, run durable AI tasks, and retrieve verified results.",
   "author": {
     "name": "Lex"

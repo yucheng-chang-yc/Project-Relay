@@ -56,7 +56,7 @@ $RelayAppId = Read-Host 'Registered ChatGPT app ID or app URL'
 python "$RelayRoot\maintenance\connect_chatgpt.py" --root "$RelayRoot" package --app-id $RelayAppId
 ```
 
-Import `connection\generated\Project-Relay-Plugin-v0.2.0-preview.2.zip` from your installation root using **Plugin Creator**. Complete account binding/review. Update an existing Project Relay/Project Workbench plugin identity when available. The stable internal name is `project-workbench` and app key `workbench-mcp`. `.app.json` is generated automatically; no JSON editing/re-zipping is needed. See [official packaging instructions](https://developers.openai.com/plugins/build/plugins).
+Import `connection\generated\Project-Relay-Plugin-v0.2.0-preview.3.zip` from your installation root using **Plugin Creator**. Complete account binding/review. Update an existing Project Relay/Project Workbench plugin identity when available. The stable internal name is `project-workbench` and app key `workbench-mcp`. `.app.json` is generated automatically; no JSON editing/re-zipping is needed. See [official packaging instructions](https://developers.openai.com/plugins/build/plugins).
 
 Identical generation preserves the package. Use `package --app-id <new-actual-id> --replace` when deliberately changing binding, then update the account plugin. The generated ZIP has four files: `plugin.json`, `.app.json`, `skills/project-workbench/SKILL.md` and `LICENSE`. The universal Template is source material, not a connected Plugin package.
 

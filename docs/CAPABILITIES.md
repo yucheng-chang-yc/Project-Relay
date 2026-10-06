@@ -37,3 +37,7 @@ The denied request was a later replacement test after an earlier file was accide
 - Private account setup depends on the user's available developer-mode/tunnel permissions.
 
 The broader PM requirements contain later collaboration/session features. This package delivers the current runtime and usable installation, rather than claiming the complete future roadmap.
+
+## Preview.3 candidate
+
+Shared-folder grants (exact-path card approval, read-only/read-write, until revoked), directory listing/creation, exact 20 MiB file reads and staged binary/text writes in 256 KiB windows are implemented. Local fixture roundtrips and denial/revocation/path defenses are tested; live ChatGPT approval/transport remains pending. Archives retain evidence; task failures retain known earlier-stage evidence without becoming completed/accepted. Runtime, package and Plugin: 0.2.0-preview.3. See PREVIEW3_CHANGES.md and VERIFICATION_PREVIEW3.md.

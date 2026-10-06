@@ -58,6 +58,7 @@ def execute(runtime, task_id):
     if cancelled:
         runtime.finish(task_id, "cancelled")
         return
+    runtime.checkpoint_task(task_id, "preparation", "running")
     runtime.validate_task_binding(runtime.get_row(task_id))
     cwd = root
     input_data = None
@@ -98,6 +99,8 @@ def execute(runtime, task_id):
     reason = None
     output_path = directory / "claude-output.json"
     runtime.validate_task_binding(runtime.get_row(task_id))
+    runtime.checkpoint_task(task_id, "preparation", "completed")
+    runtime.checkpoint_task(task_id, "execution", "running")
     with log_path.open("wb") as log, output_path.open("wb") as structured:
         if row["kind"] == "claude":
             log.write(b"Claude Code started; structured stdout is retained separately until completion.\n")
@@ -143,6 +146,10 @@ def execute(runtime, task_id):
         with log_path.open("ab") as log, output_path.open("rb") as structured:
             log.write(b"\nClaude Code structured stdout (bounded):\n")
             log.write(structured.read(1024 * 1024))
+    runtime.checkpoint_task(task_id, "execution", reason or ("completed" if code == 0 else "failed"),
+        result={"summary": "Executor completed" if code == 0 and not reason else "Executor did not complete successfully",
+                "findings": [], "tests": [], "changed_files": [], "artifacts": [], "base_head": row["base_head"],
+                "kind": row["kind"], "executor_log_sha256": hash_file(log_path)}, exit_code=code)
     if reason:
         if spec.get("compute_runtime"):
             from .restricted import stop_owned
@@ -161,6 +168,7 @@ def execute(runtime, task_id):
                 raise UncertainExecution("Failed executor left an uncertain command lease") from e
         runtime.finish(task_id, "failed", code, error=f"Executor exited with code {code}; inspect bounded log")
         return
+    runtime.checkpoint_task(task_id, "command_shutdown", "running")
     if spec.get("compute_runtime"):
         from .restricted import stop_owned, capture_runs
         try:
@@ -168,20 +176,18 @@ def execute(runtime, task_id):
             capture_runs(runtime, task_id)
         except Exception as e:
             raise UncertainExecution("Command lease did not terminate before artifact/diff capture") from e
-    result = {"summary": "Configured command finished successfully", "findings": [], "tests": [],
+    runtime.checkpoint_task(task_id, "command_shutdown", "completed")
+    result = {"summary": "Executor exited with code 0; result verification pending" if row["kind"] in AGENT_KINDS else "Configured command finished successfully", "findings": [], "tests": [],
               "changed_files": [], "artifacts": [], "base_head": row["base_head"], "kind": row["kind"]}
     if row["kind"] in AGENT_KINDS:
+        runtime.checkpoint_task(task_id, "result_parse", "running", result=result)
         report, metadata = agent_result(row["kind"], directory)
-        if run_git(cwd, ["rev-parse", "HEAD"]) != row["base_head"]:
-            raise WorkbenchError("Executor changed worktree HEAD; automatic integration is unavailable")
-        diff, actual_names = runtime.snapshot_diff(cwd, directory, input_paths=[e["destination"] for e in spec.get("inputs", [])])
-        for name in actual_names:
-            safe_path(cwd, name)
-        (directory / "changes.patch").write_bytes(diff)
         result.update(report)
         result.update(metadata)
-        result.update({"changed_files": actual_names, "reported_changed_files": report["changed_files"],
-                       "diff_sha256": digest(diff), "diff_bytes": len(diff)})
+        result["reported_changed_files"] = report["changed_files"]
+        result["changed_files"] = []  # Agent claims are not captured diff evidence.
+        runtime.checkpoint_task(task_id, "result_parse", "completed", result=result)
+    runtime.checkpoint_task(task_id, "artifact_capture", "running", result=result)
     artifact_bytes = 0
     for i, relative in enumerate(spec.get("artifacts", [])):
         source = safe_path(cwd, relative)
@@ -203,6 +209,19 @@ def execute(runtime, task_id):
                                     "mime_type": mimetypes.guess_type(relative)[0] or "application/octet-stream",
                                     "role": "declared_output", "durability": "copied_task_store", "untrusted": True})
         result["artifacts"][-1]["captured_at"] = time.time()
+        runtime.checkpoint_task(task_id, "artifact_capture", "running", result=result)
+    runtime.checkpoint_task(task_id, "artifact_capture", "completed", result=result)
+    if row["kind"] in AGENT_KINDS:
+        runtime.checkpoint_task(task_id, "change_capture", "running", result=result)
+        if run_git(cwd, ["rev-parse", "HEAD"]) != row["base_head"]:
+            raise WorkbenchError("Executor changed worktree HEAD; automatic integration is unavailable")
+        diff, actual_names = runtime.snapshot_diff(cwd, directory, input_paths=[e["destination"] for e in spec.get("inputs", [])])
+        for name in actual_names:
+            safe_path(cwd, name)
+        (directory / "changes.patch").write_bytes(diff)
+        result.update({"changed_files": actual_names, "reported_changed_files": report["changed_files"],
+                       "diff_sha256": digest(diff), "diff_bytes": len(diff)})
+        runtime.checkpoint_task(task_id, "change_capture", "completed", result=result)
     if row["kind"] in AGENT_KINDS:
         p = directory / "changes.patch"
         result["artifacts"].append({"id": len(result["artifacts"]), "name": "changes.patch",
@@ -211,6 +230,7 @@ def execute(runtime, task_id):
              "work_unit_id": runtime.loop.snapshot(task_id)["work_unit_id"], "mime_type": "text/x-diff",
              "role": "diff", "durability": "copied_task_store", "untrusted": True})
         result["artifacts"][-1]["captured_at"] = time.time()
+    runtime.checkpoint_task(task_id, "evidence_seal", "running", result=result)
     result["input_snapshot_sha256"] = runtime.loop.snapshot(task_id)["snapshot_sha256"]
     result["artifact_manifest_sha256"] = digest(canonical(result["artifacts"]).encode())
     result["executor_log_sha256"] = hash_file(log_path)
@@ -221,6 +241,7 @@ def execute(runtime, task_id):
             result["command_runs"] = capture_runs(runtime, task_id)
         except Exception as e:
             raise UncertainExecution("Command lease/evidence remains uncertain; retain task lock") from e
+    runtime.checkpoint_task(task_id, "evidence_seal", "completed", result=result)
     runtime.finish(task_id, "completed", code, result=result)
 
 

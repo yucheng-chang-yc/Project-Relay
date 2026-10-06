@@ -1,4 +1,4 @@
-# Install Project Relay v0.2.0-preview.2
+# Install Project Relay v0.2.0-preview.3
 
 Target: Windows 10/11, one local account per installation. Windows 11 installation/bootstrap/ChatGPT/Claude/R passed on `.1`, and the included D-004 shutdown change passed on Windows. The exact `.2` ZIP still needs Windows fresh-install acceptance; Windows 10 has not been separately validated. The installer/runtime are also exercised on Linux. See [VERIFICATION.md](VERIFICATION.md).
 
@@ -20,9 +20,9 @@ These binaries are external prerequisites. The Local Runtime has no third-party 
 Compare the complete ZIP hash with `SHA256SUMS.txt` from the same candidate:
 
 ```powershell
-Get-FileHash .\Project-Relay-Local-v0.2.0-preview.2.zip -Algorithm SHA256
-Expand-Archive .\Project-Relay-Local-v0.2.0-preview.2.zip -DestinationPath .\relay-unpacked
-Set-Location .\relay-unpacked\Project-Relay-Local-v0.2.0-preview.2
+Get-FileHash .\Project-Relay-Local-v0.2.0-preview.3.zip -Algorithm SHA256
+Expand-Archive .\Project-Relay-Local-v0.2.0-preview.3.zip -DestinationPath .\relay-unpacked
+Set-Location .\relay-unpacked\Project-Relay-Local-v0.2.0-preview.3
 $RelayRoot = Join-Path $env:USERPROFILE 'ProjectRelay'
 python .\install.py --root "$RelayRoot" --plan --demo
 python .\install.py --root "$RelayRoot" --demo
@@ -73,7 +73,7 @@ For host URL staging, explicitly allow the exact HTTPS host in `binary_transfer.
 
 ## Upgrade and removal
 
-Preview releases may require a clean reinstall. This installer refuses a nonempty target and provides no update/state migration/uninstall operation. Keep the old installation stopped for rollback. Config, registrations, task DB, snapshots and subscriptions are not copied automatically. Only matching Local/Plugin versions are tested. The internal legacy 0.1.x updater is not the v0.2.0-preview.2 upgrade route.
+Preview releases may require a clean reinstall. This installer refuses a nonempty target and provides no update/state migration/uninstall operation. Keep the old installation stopped for rollback. Config, registrations, task DB, snapshots and subscriptions are not copied automatically. Only matching Local/Plugin versions are tested. The internal legacy 0.1.x updater is not the v0.2.0-preview.3 upgrade route.
 
 ## Rollback
 
@@ -88,3 +88,7 @@ The new installer does not alter the old configuration, task DB or projects. A r
 ## Credentials and licensing
 
 Protect `config/config.json`, state/logs/backups, CLI authentication and any explicit tunnel-key file with local account permissions. The optional local HTTP token is installation-wide and stored in plaintext config; the tunnel runtime key is separately created/rotated in OpenAI Platform and supplied via hidden prompt or explicit private file. See [SECURITY.md](SECURITY.md). Source is MIT-licensed; `LICENSE` is included in the Local Pack, installation and Plugin artifacts. External tools/binaries are not bundled.
+
+## Preview.3 additions
+
+Shared-folder-only use needs Python and the ChatGPT connection, without Git or executors. Omit `--demo` to install without projects. Folder grants cover current/future contents until revoked. New grants, revocation and archives are live operations; initial deployment of these new tools requires a restart and MCP rescan. See [PREVIEW3_CHANGES.md](PREVIEW3_CHANGES.md).

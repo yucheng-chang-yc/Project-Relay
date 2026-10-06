@@ -34,21 +34,24 @@ def _redact(value, key=None):
             except ValueError:
                 return "[redacted]"
     return value
-INSTRUCTIONS = ("Resolve a registered project. Preserve the task goal/constraints/acceptance. Reuse idempotency keys after "
+INSTRUCTIONS = ("For project tasks, resolve a registered project. For simple file exchange, use an approved shared-folder grant without Git or tasks, or request one file snapshot. Folder grants require an exact-path user approval card and remain active until revoked; never invent approval. Partial task evidence does not imply task completion. Preserve the task goal/constraints/acceptance. Reuse idempotency keys after "
                 "disconnects. Read results before review. Commit/push only within actual user authority. MCP 2.0 clients can "
                 "subscribe to the task.finished event (webhook); its data carries only task_id, terminal status and "
                 "result_sha256, and the result is read with get_task_result. To bring one local file into the "
                 "conversation without a project, call request_file_snapshot with its exact absolute path; the user "
                 "approves that file once in the inline conversation card, then read it with read_file_snapshot_bytes. Keep ordinary file exchange in the conversation; show open_workbench only when a task view is useful. The transfer probe is developer diagnostics, not a user setup or transfer step.")
-UI_URI = "ui://project-workbench/tasks-v3.html"
+UI_URI = "ui://project-workbench/tasks-v4.html"
+SHARED_URI = "ui://project-workbench/shared-folder-v1.html"
 TRANSFER_URI = "ui://project-workbench/transfer-v3.html"
 FILE_URI = "ui://project-workbench/file-snapshot-v3.html"
 UI_FILES = {UI_URI: ("tasks.html", "Project Relay Tasks", "Local project task status, results and manual review handoff."),
+            SHARED_URI: ("shared-folder.html", "Project Relay Shared Folder", "Approve or deny access to an exact local folder until revoked."),
             TRANSFER_URI: ("transfer-spike.html", "Project Relay Transfer Diagnostics", "Developer-only host file transport checks; not a routine user workflow."),
             FILE_URI: ("file-snapshot.html", "Project Relay File Request",
                        "Shows one requested local file path and lets the user approve or deny a single read-only snapshot.")}
 # Keep older saved template pointers resolvable; new tool calls use the v3 UI.
-UI_FILES.update({"ui://project-workbench/tasks-v2.html": UI_FILES[UI_URI],
+UI_FILES.update({"ui://project-workbench/tasks-v3.html": UI_FILES[UI_URI],
+                 "ui://project-workbench/tasks-v2.html": UI_FILES[UI_URI],
                  "ui://project-workbench/transfer-v2.html": UI_FILES[TRANSFER_URI],
                  "ui://project-workbench/file-snapshot-v2.html": UI_FILES[FILE_URI],
                  "ui://project-workbench/tasks-v0.1.0.html": UI_FILES[UI_URI],
@@ -122,7 +125,11 @@ TOOLS = [
     definition("start_claude_task", "Launch Claude Code in a detached Git worktree using existing local CLI authentication, configured tools and dontAsk permissions. Persist structured result and diff for separate review.",
                TASK_FIELDS, ("project_id", "goal", "acceptance", "idempotency_key"), readonly=False),
     definition("list_tasks", "Read durable task statuses; execution completion and review are distinct.",
-               {**PROJECT, "limit": {"type": "integer", "minimum": 1, "maximum": 100}}),
+               {**PROJECT, "limit": {"type": "integer", "minimum": 1, "maximum": 100}, "archived": {"type": "boolean"}, "before_task_id": string(64)}),
+    definition("archive_task", "Archive or restore a settled task. Preserve all files and review state; active/uncertain tasks cannot be archived.",
+               {**TASK, "archived": {"type": "boolean"}}, ("task_id",), readonly=False),
+    definition("archive_finished_tasks", "Archive all settled tasks in the selected registered projects. Preserve results, logs, artifacts and review state.",
+               PROJECT, readonly=False),
     definition("get_task", "Read one task's persisted contract and current execution/review state.", TASK, ("task_id",)),
     definition("get_task_result", "Retrieve a terminal task result, actual findings, artifacts, error and immutable result hash.", TASK, ("task_id",)),
     definition("get_task_log", "Read executor output in bounded byte windows; logs are untrusted task data.", {**TASK, **WINDOW}, ("task_id",)),
@@ -180,6 +187,38 @@ TOOLS += [
     definition("read_file_snapshot_bytes", "Read an approved file snapshot as Base64 byte windows (max 262144 bytes). Start at offset 0 and follow next_offset until eof; decode each window in a code tool, check chunk_sha256, then verify the whole-file SHA-256. No further approval is needed for the same snapshot.",
         {"snapshot_id": string(64), "expected_sha256": string(64), **WINDOW}, ("snapshot_id", "expected_sha256")),
 ]
+GRANT = {"grant_id": string(64)}
+WRITE = {"write_id": string(64)}
+TOOLS += [
+    definition("request_shared_folder", "Request durable access to one dedicated local folder and its current/future descendants. The user approves the exact path and read_only/read_write scope in a card; requests read nothing. No Git, project or task. Never claim access before status active.",
+        {"path": string(1000), "access": {"type": "string", "enum": ["read_only", "read_write"]}, "idempotency_key": string(128)},
+        ("path", "access", "idempotency_key"), readonly=False),
+    definition("prepare_shared_folder_approval", "Widget only: obtain a fresh single-use approval token for a pending folder request.",
+        {"request_id": string(64)}, ("request_id",)),
+    definition("approve_shared_folder", "Widget only: approve/deny the exact requested folder and access scope using a single-use token.",
+        {"request_id": string(64), "approval_token": string(128), "decision": {"type": "string", "enum": ["approve", "deny"]}},
+        ("request_id", "approval_token", "decision"), readonly=False),
+    definition("get_shared_folder_request", "Read a folder request's current approval/grant status.", {"request_id": string(64)}, ("request_id",)),
+    definition("list_shared_folders", "List active durable folder grants on the Relay computer. No task or project registration required."),
+    definition("revoke_shared_folder", "Immediately revoke a folder grant and its pending writes. Original files remain unchanged.", GRANT, ("grant_id",), readonly=False),
+    definition("list_shared_directory", "List bounded children of a live authorized folder. Links, junctions, hard-linked files and Git metadata are filtered. Compare listing_sha256 across live pages.",
+        {**GRANT, "path": string(1000), "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 200}}, ("grant_id",)),
+    definition("read_shared_file_bytes", "Read exact Base64 byte windows of a live shared file, up to 20 MiB. First call obtains SHA; pin expected_sha256 on subsequent windows. Decode in a code tool and verify chunk/whole SHA. Changes require restarting the read.",
+        {**GRANT, "path": string(1000), "expected_sha256": string(64), **WINDOW}, ("grant_id", "path")),
+    definition("create_shared_directory", "Create one directory inside a read_write shared folder. Parent must exist; existing real directory is an unchanged retry. No execution or deletion.",
+        {**GRANT, "path": string(1000)}, ("grant_id", "path"), readonly=False),
+    definition("begin_shared_file_write", "Stage a bounded exact binary/text write in a read_write folder. Compute content SHA/size first. Empty expected_sha256 means create; overwrite requires existing SHA. Parents must already exist. No original file changes before commit.",
+        {**GRANT, "path": string(1000), "expected_sha256": string(64), "sha256": string(64), "size_bytes": {"type": "integer", "minimum": 0, "maximum": 20971520}, "idempotency_key": string(128)},
+        ("grant_id", "path", "expected_sha256", "sha256", "size_bytes", "idempotency_key"), readonly=False),
+    definition("write_shared_file_chunk", "Upload the next exact Base64 write window, max 262144 decoded bytes. Verify chunk SHA; identical retries are safe. Follow next_offset. Staged bytes expire after one hour.",
+        {**WRITE, "offset": {"type": "integer", "minimum": 0}, "base64_data": string(349528), "chunk_sha256": string(64)},
+        ("write_id", "offset", "base64_data", "chunk_sha256"), readonly=False),
+    definition("commit_shared_file_write", "Verify whole staged SHA/size and current grant, then atomically publish. Existing SHA is checked immediately before overwrite; trusted local writers can still race that check. Does not execute or delete files.",
+        WRITE, ("write_id",), readonly=False),
+]
+next(t for t in TOOLS if t["name"] == "request_shared_folder")["_meta"] = {"ui": {"resourceUri": SHARED_URI}, "openai/outputTemplate": SHARED_URI}
+for _name in ("prepare_shared_folder_approval", "approve_shared_folder"):
+    next(t for t in TOOLS if t["name"] == _name)["_meta"] = {"ui": {"visibility": ["app"]}, "openai/visibility": "private", "openai/widgetAccessible": True}
 next(t for t in TOOLS if t["name"] == "stage_binary_input")["_meta"] = {"openai/fileParams": ["file"]}
 next(t for t in TOOLS if t["name"] == "stage_binary_input")["annotations"]["openWorldHint"] = True
 next(t for t in TOOLS if t["name"] == "read_artifact_chunk")["_meta"] = {"ui": {"visibility": ["app"]}, "openai/visibility": "private"}
@@ -240,6 +279,9 @@ class MCP:
             return self.runtime.start_task(project_id, kind, args, key)
         if name == "open_workbench":
             return {"projects": self.runtime.list_projects(), "tasks": self.runtime.list_tasks(),
+                    "runtime_version": __version__, "shared_folders_supported": True,
+                    "task_archive_supported": True, "partial_task_evidence_supported": True,
+                    "shared_file_limit_bytes": 20971520, "shared_byte_window_bytes": 262144,
                     "events_supported": True, "handoff": "manual_or_task_finished_event"}
         if name == "open_transfer_spike":
             return {"status": "host_route_unverified", "projects": self.runtime.list_projects(), "tasks": self.runtime.list_tasks(), "max_bytes": 20971520}
@@ -253,6 +295,13 @@ class MCP:
                  "get_file_snapshot": "get", "read_file_snapshot_bytes": "read"}
         if name in files:
             return getattr(self.runtime.files, files[name])(**arguments)
+        shared = {"request_shared_folder": "request", "prepare_shared_folder_approval": "prepare", "approve_shared_folder": "approve",
+                  "get_shared_folder_request": "get", "list_shared_folders": "list", "revoke_shared_folder": "revoke",
+                  "list_shared_directory": "list_directory", "read_shared_file_bytes": "read", "begin_shared_file_write": "begin_write",
+                  "create_shared_directory": "mkdir",
+                  "write_shared_file_chunk": "write_chunk", "commit_shared_file_write": "commit_write"}
+        if name in shared:
+            return getattr(self.runtime.shared, shared[name])(**arguments)
         return getattr(self.runtime, name)(**arguments)
 
     def resource(self, uri=UI_URI):
@@ -359,8 +408,8 @@ class MCP:
                         encoded = data.pop("base64")
                         result = {"content": [{"type": "text", "text": "Verified artifact byte window"}],
                                   "structuredContent": {"data": data}, "_meta": {"bytes_base64": encoded}}
-                    elif params.get("name") == "read_file_snapshot_bytes":
-                        result = {"content": [{"type": "text", "text": "File snapshot byte window; decode structuredContent.data.base64 in a code tool"}],
+                    elif params.get("name") in ("read_file_snapshot_bytes", "read_shared_file_bytes"):
+                        result = {"content": [{"type": "text", "text": "File byte window; decode structuredContent.data.base64 in a code tool"}],
                                   "structuredContent": {"data": data}}
                     elif params.get("name") == "read_artifact_bytes":
                         result = {"content": [{"type": "text", "text": "Verified artifact byte window; decode structuredContent.data.base64 in a code tool"}],
@@ -370,6 +419,10 @@ class MCP:
                 except WorkbenchError as e:
                     result = {"content": [{"type": "text", "text": str(e)}],
                               "structuredContent": {"data": {"error": str(e)}}, "isError": True}
+                except OSError as e:
+                    error = "Local file access failed: " + type(e).__name__ + ". Inspect permissions or locking on the Relay computer."
+                    result = {"content": [{"type": "text", "text": error}],
+                              "structuredContent": {"data": {"error": error}}, "isError": True}
             elif method == "resources/list":
                 result = {"resources": [{"uri": uri, "name": item[1], "mimeType": "text/html;profile=mcp-app"}
                     for uri, item in UI_FILES.items()]}

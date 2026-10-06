@@ -10,7 +10,7 @@
 | `tests/`, `project-workbench/tests/` | Installer/bootstrap/shutdown/UI and runtime tests |
 | `docs/`, `templates/`, `build.py` | Release instructions, config example and deterministic ZIP builder |
 
-The complete, unchanged release source is under `local-pack/` in the repository. Root documentation records verification performed after the package freeze. From a source checkout, first run `Set-Location .\local-pack`; from an extracted Local Pack, use its package root. Run these commands there. Python runtime and build use the standard library; there is no pip dependency installation. Git is needed by Git/task tests. Node is needed only by JavaScript UI tests. Real executor/R/tunnel tests require their separately installed tools.
+Run these commands from the extracted Local Pack or a source checkout with this layout. Python runtime and build use the standard library; there is no pip dependency installation. Git is needed by Git/task tests. Node is needed only by JavaScript UI tests. Real executor/R/tunnel tests require their separately installed tools.
 
 ## Reproducible build and checks
 
@@ -50,10 +50,10 @@ python "$RelayRoot\maintenance\connect_chatgpt.py" --root "$RelayRoot" package -
 
 Project Relay source is MIT-licensed; see [../LICENSE](../LICENSE). Its Python runtime/build has no third-party Python package dependency. Test and trial fixtures are source files, not installed provider executables. No Python, Node, Git, R, OpenAI Codex, Anthropic Claude Code, Docker or tunnel-client binaries are redistributed in these artifacts. Install and use those tools under their own licenses/service terms. The included container Dockerfile is an optional development fixture, not a bundled container image or the Windows default security model.
 
-The installer copies the MIT notice into the installation. Universal Template and generated Plugin ZIPs retain it. The runtime core continues to report `0.2.0-spike.4`; package/Plugin metadata reports `0.2.0-preview.2`.
+The installer copies the MIT notice into the installation. Universal Template and generated Plugin ZIPs retain it. Runtime core and package/Plugin metadata report `0.2.0-preview.3`; UI reports `0.2.0-ui.4`.
 
 ## Contribution and version status
 
 Issues are welcome. Discuss substantial PRs in an issue before implementation; submitted changes need relevant tests and evidence for any release claim. Preview APIs/configuration may change, clean reinstallation may be needed and backward compatibility is not promised. Stable/production-ready status is not claimed.
 
-The source/release repository is https://github.com/yucheng-chang-yc/Project-Relay. Frozen public assets are retained under `release/v0.2.0-preview.2/`. The release workflow verifies their SHA-256, manifest and source bytes before publication, then downloads every GitHub asset to verify its SHA-256 again. The published accompanying README and notes record later acceptance results; the frozen Local ZIP retains build-time documentation. Build from `local-pack/` to reproduce the accepted ZIP in the tested compression environment. A build from changed source requires a new candidate and its own validation.
+The intended source/release repository is https://github.com/yucheng-chang-yc/Project-Relay. This candidate is prepared for publication; packaging it does not itself publish or tag that repository.

@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 import zipfile
 
-VERSION = '0.2.0-preview.2'
+VERSION = '0.2.0-preview.3'
 IGNORED_DIRS = {'.git', '__pycache__', '.pytest_cache'}
 
 
@@ -45,7 +45,7 @@ def main():
         files.append({'path': p.relative_to(root).as_posix(), 'bytes': len(raw),
                       'sha256': hashlib.sha256(raw).hexdigest()})
     manifest.write_text(json.dumps({'schema': 'workbench.release.v1',
-        'package_version': VERSION, 'runtime_version': '0.2.0-spike.4',
+        'package_version': VERSION, 'runtime_version': '0.2.0-preview.3',
         'files': files}, indent=2) + '\n', encoding='utf-8')
     sys.path.insert(0, str(root / 'tools'))
     from verify_package import verify

@@ -173,12 +173,19 @@ class Runtime:
             for name in ("project_root", "repo_identity", "project_binding_sha256"):
                 if name not in columns:
                     c.execute(f"ALTER TABLE tasks ADD COLUMN {name} TEXT")
+            if "archived" not in columns:
+                c.execute("ALTER TABLE tasks ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
+            c.execute("""CREATE TABLE IF NOT EXISTS task_progress (
+                task_id TEXT PRIMARY KEY, phase TEXT NOT NULL, stages TEXT NOT NULL,
+                partial_result TEXT, executor_exit_code INTEGER, updated REAL NOT NULL)""")
         from .loop import LoopStore
         self.loop = LoopStore(self)
         from .events import EventStore
         self.events = EventStore(self)
         from .filesnap import FileSnapshotStore
         self.files = FileSnapshotStore(self)
+        from .shared import SharedFolderStore
+        self.shared = SharedFolderStore(self)
 
     @contextlib.contextmanager
     def connection(self, write=False):
@@ -331,7 +338,12 @@ class Runtime:
                     "native_trusted_r": compute.get("trust") == "local_account_without_containment",
                     "project_sessions": False,
                     "registry_mutation": False, "readonly_task_concurrency": False, "mcp_events": True,
-                    "single_file_snapshot": True},
+                    "single_file_snapshot": True, "shared_folders": True,
+                    "task_archives": True, "partial_task_evidence": True},
+                "shared_folder_detail": {"project_required": False, "git_required": False,
+                    "authorization": "exact_folder_and_scope_user_approval_until_revoked",
+                    "max_bytes": 20971520, "chunk_bytes": 262144, "chatgpt_acceptance": "unverified",
+                    "os_containment": False},
                 "mcp_events_detail": {"server_implementation": "implemented", "protocol_version": "2026-07-28",
                     "discovery": "server/discover capabilities.events", "events": ["task.finished"], "delivery": ["webhook"],
                     "payload": ["task_id", "status", "result_sha256"],
@@ -682,6 +694,10 @@ class Runtime:
         d["spec"] = json.loads(d["spec"])
         d.pop("result", None)
         d.pop("fingerprint", None)
+        with self.connection() as c:
+            progress = c.execute("SELECT phase,stages,executor_exit_code FROM task_progress WHERE task_id=?", (d["id"],)).fetchone()
+        d["progress"] = {"phase": progress["phase"], "stages": json.loads(progress["stages"]),
+                         "executor_exit_code": progress["executor_exit_code"]} if progress else None
         d["heartbeat_stale"] = d["status"] in ACTIVE and time.time() - (d["heartbeat"] or d["created"]) > 15
         return d
 
@@ -720,7 +736,7 @@ class Runtime:
         self.reconcile_interrupted()
         return self.public_task(self.get_row(task_id))
 
-    def list_tasks(self, project_id=None, limit=50):
+    def list_tasks(self, project_id=None, limit=50, archived=False, before_task_id=None):
         self.reconcile_interrupted()
         if project_id:
             self.project(project_id)
@@ -729,13 +745,53 @@ class Runtime:
         ids = [project_id] if project_id else list(self.projects)
         if not ids:
             return []
+        cursor = self.get_row(before_task_id) if before_task_id else None
+        if cursor and project_id and cursor["project"] != project_id:
+            raise WorkbenchError("Task cursor belongs to another project")
+        window = " AND (created<? OR (created=? AND id<?))" if cursor else ""
+        position = (cursor["created"], cursor["created"], cursor["id"]) if cursor else ()
         with self.connection() as c:
-            rows = c.execute(f"SELECT * FROM tasks WHERE project IN ({','.join('?' for _ in ids)})"
-                             " ORDER BY created DESC LIMIT ?", (*ids, limit)).fetchall()
+            rows = c.execute(f"SELECT * FROM tasks WHERE project IN ({','.join('?' for _ in ids)}) AND archived=?"
+                             + window + " ORDER BY created DESC,id DESC LIMIT ?", (*ids, int(archived), *position, limit)).fetchall()
         tasks = [self.public_task(r) for r in rows]
         for task in tasks:
             task["spec"] = {"goal": task["spec"]["goal"][:1000]}
         return tasks
+
+    def archive_task(self, task_id, archived=True):
+        self.get_row(task_id)
+        with self.connection(write=True) as c:
+            row = c.execute("SELECT status FROM tasks WHERE id=?", (task_id,)).fetchone()
+            if row["status"] not in ("completed", "failed", "cancelled", "timed_out"):
+                raise WorkbenchError("Only settled tasks can be archived; resolve uncertain execution first")
+            c.execute("UPDATE tasks SET archived=? WHERE id=?", (int(archived), task_id))
+        return self.get_task(task_id)
+
+    def archive_finished_tasks(self, project_id=None):
+        ids = [project_id] if project_id else list(self.projects)
+        if project_id:
+            self.project(project_id)
+        with self.connection(write=True) as c:
+            count = 0
+            for ident in ids:
+                count += c.execute("UPDATE tasks SET archived=1 WHERE project=? AND archived=0 "
+                    "AND status IN ('completed','failed','cancelled','timed_out')", (ident,)).rowcount
+        return {"archived_count": count, "retained": "results, logs, artifacts, worktrees and review records"}
+
+    def checkpoint_task(self, ident, phase, state, result=None, exit_code=None):
+        """Persist actual stage evidence before postprocessing. Terminal result identity stays write-once."""
+        if state not in ("running", "completed", "failed", "cancelled", "timed_out"):
+            raise WorkbenchError("Invalid task stage state")
+        with self.connection(write=True) as c:
+            task = c.execute("SELECT status FROM tasks WHERE id=?", (ident,)).fetchone()
+            if not task or task["status"] not in ACTIVE:
+                raise WorkbenchError("Cannot change progress of a settled task")
+            old = c.execute("SELECT * FROM task_progress WHERE task_id=?", (ident,)).fetchone()
+            stages = json.loads(old["stages"]) if old else {}
+            stages[phase] = {"status": state, "at": time.time()}
+            c.execute("INSERT OR REPLACE INTO task_progress VALUES(?,?,?,?,?,?)", (ident, phase,
+                canonical(stages), canonical(result) if result is not None else (old["partial_result"] if old else None),
+                exit_code if exit_code is not None else (old["executor_exit_code"] if old else None), time.time()))
 
     def heartbeat(self, ident):
         with self.connection(write=True) as c:
@@ -744,8 +800,21 @@ class Runtime:
         return bool(row and row[0])
 
     def finish(self, ident, status, exit_code=None, result=None, error=None):
-        encoded = canonical(result) if result is not None else None
         with self.connection(write=True) as c:
+            progress = c.execute("SELECT * FROM task_progress WHERE task_id=?", (ident,)).fetchone()
+            if progress:
+                exit_code = exit_code if exit_code is not None else progress["executor_exit_code"]
+                if result is None and progress["partial_result"]:
+                    result = json.loads(progress["partial_result"])
+                stages = json.loads(progress["stages"])
+                if error and stages.get(progress["phase"], {}).get("status") == "running":
+                    stages[progress["phase"]] = {"status": "failed", "at": time.time()}
+                if result is not None:
+                    result = {**result, "stages": stages, "error_phase": progress["phase"] if error else None,
+                              "execution_completed": stages.get("execution", {}).get("status") == "completed",
+                              "integration": "not_performed", "complete": status == "completed"}
+                c.execute("UPDATE task_progress SET stages=? WHERE task_id=?", (canonical(stages), ident))
+            encoded = canonical(result) if result is not None else None
             current = c.execute("SELECT status,result,exit_code,error FROM tasks WHERE id=?", (ident,)).fetchone()
             if current and current["status"] in ("completed", "failed", "cancelled", "timed_out"):
                 if (current["status"], current["result"], current["exit_code"], current["error"]) == (status, encoded, exit_code, error):

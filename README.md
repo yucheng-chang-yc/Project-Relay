@@ -4,7 +4,7 @@
 
 Project Relay lets you stay in ChatGPT while working with an authorized local project. From the Project Relay plugin, ChatGPT can inspect local files and Git state, delegate heavier work to Codex or Claude, run approved project commands, bring generated artifacts back for review, and continue from those exact results.
 
-> **Status:** Preview / MVP. Windows installation, tunnel connection and the ChatGPT → Claude → R → exact ZIP workflow passed on `v0.2.0-preview.1`; its shutdown fix also passed on Windows. `v0.2.0-preview.2` packages those changes, MIT licensing and updated release documentation. The exact `.2` ZIP passed Windows fresh-install checks; the private Plugin was updated and project tools passed a live smoke on the retained baseline installation. See [release verification](docs/VERIFICATION.md) for tested scope.
+> **Status:** `v0.2.0-preview.3` candidate adds shared folders, task archives and partial execution evidence. Earlier Windows installation and ChatGPT → Claude → R → ZIP evidence belongs to preview.1/preview.2. This candidate requires its own Windows and live ChatGPT verification; see [candidate evidence](docs/VERIFICATION_PREVIEW3.md).
 
 ## How It Fits with Existing Tools
 
@@ -53,8 +53,8 @@ GitHub can remain the durable remote without being the mandatory shuttle for eve
 For the packaged Preview on Windows:
 
 ```powershell
-Expand-Archive .\Project-Relay-Local-v0.2.0-preview.2.zip -DestinationPath .\ProjectRelay-preview
-Set-Location .\ProjectRelay-preview\Project-Relay-Local-v0.2.0-preview.2
+Expand-Archive .\Project-Relay-Local-v0.2.0-preview.3.zip -DestinationPath .\ProjectRelay-preview
+Set-Location .\ProjectRelay-preview\Project-Relay-Local-v0.2.0-preview.3
 
 $RelayRoot = Join-Path $env:USERPROFILE 'ProjectRelay'
 
@@ -172,7 +172,7 @@ For a custom empty root:
 python .\install.py --root "C:\Path\To\ProjectRelay" --demo
 ```
 
-For single-file sharing without the demo project, omit `--demo`.
+For shared-folder or single-file exchange without a Git project, omit `--demo`.
 
 ### Connect ChatGPT
 
@@ -205,6 +205,10 @@ python "$RelayRoot\maintenance\register_project.py" --root "$RelayRoot" --projec
 ```
 
 Registration is read-only by default; add `--writable` to allow edits/tasks. Restart Project Relay after local configuration changes.
+
+### Shared folder access
+
+Create a dedicated folder such as `C:\RelayShared`, then ask ChatGPT to request read-only or read/write access to that exact folder. Approve the displayed scope in the inline card. Access includes current and future descendants until revoked; no Git or project registration is needed. Use **Shared folders** in the Tasks view to revoke access. See [shared folders and task improvements](docs/PREVIEW3_CHANGES.md) for exact limits and trust boundaries.
 
 ### Account smoke test
 
@@ -249,7 +253,7 @@ ChatGPT
 → follow-up from prior results
 ```
 
-Windows installation, private Plugin binding, ChatGPT project inspection, a short task, and the Claude/R artifact loop passed on `v0.2.0-preview.1`. The shutdown patch passed real Ctrl+C/Ctrl+Break stop/restart checks. For `v0.2.0-preview.2`, exact-ZIP Windows installation and private Plugin import passed. Live project smoke used the retained `.1 + D-004` service; the isolated `.2` installation was checked over stdio and has not taken over the live tunnel. Tasks-card visual behavior, originating-conversation Events continuation and snapshots above 97,520 bytes are not yet verified. See [verification scope](docs/VERIFICATION.md).
+Windows installation, private Plugin binding, ChatGPT project inspection, a short task, and the Claude/R artifact loop passed on `v0.2.0-preview.1`. The shutdown patch passed real Ctrl+C/Ctrl+Break stop/restart checks. For `v0.2.0-preview.3`, exact-ZIP Windows installation and private Plugin import passed. Live project smoke used the retained `.1 + D-004` service; the isolated `.2` installation was checked over stdio and has not taken over the live tunnel. Tasks-card visual behavior, originating-conversation Events continuation and snapshots above 97,520 bytes are not yet verified. See [verification scope](docs/VERIFICATION.md).
 
 Still being refined:
 
@@ -267,8 +271,8 @@ The release candidate contains:
 
 | Artifact | Purpose |
 | --- | --- |
-| `Project-Relay-Local-v0.2.0-preview.2.zip` | Reusable runtime, installer, connection tools, and documentation |
-| `Project-Relay-Plugin-Template-v0.2.0-preview.2.zip` | Unbound manifest/skill template with no user app mapping or credentials |
+| `Project-Relay-Local-v0.2.0-preview.3.zip` | Reusable runtime, installer, connection tools, and documentation |
+| `Project-Relay-Plugin-Template-v0.2.0-preview.3.zip` | Unbound manifest/skill template with no user app mapping or credentials |
 | `SHA256SUMS.txt` | SHA-256 of the release ZIPs and accompanying files |
 | `README.md`, `INSTALL.md`, `RELEASE_NOTES.md` | Product, setup, and release information |
 | `LICENSE` | MIT license for Project Relay source |
@@ -278,8 +282,8 @@ The account-specific connected Plugin ZIP is generated locally after MCP app reg
 Verify downloads before extraction:
 
 ```powershell
-Get-FileHash .\Project-Relay-Local-v0.2.0-preview.2.zip -Algorithm SHA256
-Get-FileHash .\Project-Relay-Plugin-Template-v0.2.0-preview.2.zip -Algorithm SHA256
+Get-FileHash .\Project-Relay-Local-v0.2.0-preview.3.zip -Algorithm SHA256
+Get-FileHash .\Project-Relay-Plugin-Template-v0.2.0-preview.3.zip -Algorithm SHA256
 Get-Content .\SHA256SUMS.txt
 ```
 
@@ -288,11 +292,11 @@ Preview upgrades use a new empty installation root; automatic migration and in-p
 The matching candidate is:
 
 ```text
-Local package / Plugin: 0.2.0-preview.2
-Bundled runtime core:    0.2.0-spike.4
+Local package / Plugin: 0.2.0-preview.3
+Bundled runtime core:    0.2.0-preview.3
 ```
 
-Preview validation targets matching Local Runtime package and Plugin versions. Other compatibility combinations are not currently established. The `.2` private Plugin was checked with the retained baseline service; a full live-tunnel takeover by the isolated `.2` installation was not performed.
+Preview validation targets matching Local Runtime package and Plugin versions. Other compatibility combinations are not currently established. Preview.3 uses matching package, core and Plugin identities. Its Windows and live-host acceptance status is recorded separately in [candidate evidence](docs/VERIFICATION_PREVIEW3.md).
 
 ## Development and Release Status
 

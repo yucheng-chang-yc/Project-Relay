@@ -230,7 +230,8 @@ class RuntimeTests(unittest.TestCase):
                 done = self.wait(task["id"])
                 self.assertEqual(done["status"], "failed", done)
                 self.assertEqual(done["review_status"], "pending")
-                self.assertIsNone(self.runtime.get_task_result(task["id"])["result"])
+                self.assertFalse(self.runtime.get_task_result(task["id"])["result"]["complete"])
+                self.assertEqual(self.runtime.get_task_result(task["id"])["result"]["integration"], "not_performed")
                 self.assertTrue(done["error"])
 
     @unittest.skipIf(os.name == "nt", "Abrupt POSIX worker loss; Windows requires native live evidence")

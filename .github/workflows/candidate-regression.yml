@@ -1,0 +1,43 @@
+name: Preview candidate regression
+on:
+  push:
+    branches: ['candidate/preview.3']
+  pull_request:
+    paths: ['local-pack/**', '.github/workflows/candidate-regression.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python: '3.14'
+          - os: ubuntu-latest
+            python: '3.12'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: candidate-extracted/Project-Relay-Local-v0.2.0-preview.3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify and extract the frozen candidate ZIP
+        working-directory: .
+        run: python scripts/verify_candidate.py --release-dir candidates/v0.2.0-preview.3 --extract candidate-extracted
+      - name: Installer and connection regression
+        run: python -W error::ResourceWarning -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Runtime regression
+        working-directory: candidate-extracted/Project-Relay-Local-v0.2.0-preview.3/project-workbench
+        run: python -W error::ResourceWarning -m unittest discover -s tests -p 'test_*.py' -v
+      - name: UI interaction regression
+        run: node tests/ui-interactions.cjs

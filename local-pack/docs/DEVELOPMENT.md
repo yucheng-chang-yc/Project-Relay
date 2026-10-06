@@ -50,7 +50,7 @@ python "$RelayRoot\maintenance\connect_chatgpt.py" --root "$RelayRoot" package -
 
 Project Relay source is MIT-licensed; see [../LICENSE](../LICENSE). Its Python runtime/build has no third-party Python package dependency. Test and trial fixtures are source files, not installed provider executables. No Python, Node, Git, R, OpenAI Codex, Anthropic Claude Code, Docker or tunnel-client binaries are redistributed in these artifacts. Install and use those tools under their own licenses/service terms. The included container Dockerfile is an optional development fixture, not a bundled container image or the Windows default security model.
 
-The installer copies the MIT notice into the installation. Universal Template and generated Plugin ZIPs retain it. The runtime core continues to report `0.2.0-spike.4`; package/Plugin metadata reports `0.2.0-preview.2`.
+The installer copies the MIT notice into the installation. Universal Template and generated Plugin ZIPs retain it. Runtime core and package/Plugin metadata report `0.2.0-preview.3`; UI reports `0.2.0-ui.4`.
 
 ## Contribution and version status
 
