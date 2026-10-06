@@ -1,0 +1,2 @@
+# Release inventories describe exact bytes; never normalize candidate assets.
+candidates/** -text
